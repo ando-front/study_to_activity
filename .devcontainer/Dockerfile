@@ -1,17 +1,17 @@
 # ベースイメージとして、Python 3.11がプリインストールされたMicrosoftの公式Dev Containerイメージを使用します。
-# このイメージにはgitやzshのほか、Node.jsのバージョン管理ツールであるnvmも含まれており、開発環境の基盤として適しています。
 FROM mcr.microsoft.com/devcontainers/python:1-3.11-bullseye
 
-# Node.jsのバージョンを環境変数として定義します。
-# '--lts' を指定することで、長期サポート(LTS)版のNode.jsがインストールされるようになります。
-ENV NODE_VERSION --lts
+# Node.js LTSをインストールします。
+# nvmではなく、NodeSourceリポジトリを追加してapt経由でインストールすることで、
+# システム全体でNode.jsが利用可能になり、非インタラクティブシェルでもパスの問題が発生しにくくなります。
+RUN apt-get update && \
+    apt-get install -y ca-certificates curl gnupg && \
+    mkdir -p /etc/apt/keyrings && \
+    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
+    NODE_MAJOR=20 && \
+    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list && \
+    apt-get update && \
+    apt-get install nodejs -y
 
-# nvm (Node Version Manager) を使ってNode.jsをインストールします。
-# nvmはシェルの関数として読み込まれるため、`bash -c` を使ってコマンドを実行し、
-# Node.jsのインストールと、デフォルトバージョンの設定を一つのレイヤーで行います。
-# このコマンドはコンテナのビルド時に一度だけ実行されます。
-RUN bash -c "source /usr/local/share/nvm/nvm.sh && nvm install ${NODE_VERSION} && nvm alias default ${NODE_VERSION}"
-
-# 新しいターミナルセッションを開いた際にnvmとNode.jsが自動的に利用できるよう、
-# シェルのプロファイル(.bashrc)にnvmの初期化スクリプトを追記します。
-RUN echo -e '\n. /usr/local/share/nvm/nvm.sh' >> /home/vscode/.bashrc
+# [Optional] ビルドキャッシュをクリーンアップしてイメージサイズを削減
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
