@@ -13,11 +13,11 @@
 ## 🛠️ 技術スタック
 
 - **バックエンド**:
-    - **フレームワーク**: [Python](https://www.python.org/) / [FastAPI](https://fastapi.tiangolo.com/)
-    - **データベース**: [SQLAlchemy](https://www.sqlalchemy.org/) + [SQLite](https://www.sqlite.org/index.html) (開発用)
-    - **Webサーバー**: [Uvicorn](https://www.uvicorn.org/)
+  - **フレームワーク**: [Python](https://www.python.org/) / [FastAPI](https://fastapi.tiangolo.com/)
+  - **データベース**: [SQLAlchemy](https://www.sqlalchemy.org/) + [SQLite](https://www.sqlite.org/index.html) (開発用)
+  - **Webサーバー**: [Uvicorn](https://www.uvicorn.org/)
 - **フロントエンド**: (計画中)
-    - [Next.js](https://nextjs.org/) (React)
+  - [Next.js](https://nextjs.org/) (React)
 
 ## 🚀 開発環境の起動
 
@@ -28,11 +28,13 @@
 Dev Containerを使用すると、Dockerコンテナ内に事前に構成された開発環境が起動し、お使いのマシンの環境に影響を与えることなく、すぐに開発を開始できます。
 
 **前提条件:**
+
 - [Visual Studio Code](https://code.visualstudio.com/)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 - VS Code拡張機能: [Remote - Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
 
 **手順:**
+
 1.  このプロジェクトをVS Codeで開きます。
 2.  左下の緑色のリモートウィンドウアイコン `><` をクリックし、表示されるメニューから **「Reopen in Container」** を選択します。
 3.  初回起動時はコンテナのビルドに数分かかります。
@@ -84,7 +86,7 @@ cd frontend
 npm install
 
 # 3. フロントエンド開発サーバーを起動
-npm run dev
+npm run dev.\venv\Scripts\activate
 ```
 
 サーバーは `http://localhost:3000` で起動します。
@@ -93,8 +95,6 @@ npm run dev
 
 - **Webアプリケーション**: ブラウザで `http://localhost:3000` にアクセスします。
 - **APIドキュメント**: `http://127.0.0.1:8000/docs` にアクセスすると、バックエンドのAPI仕様を（Swagger UIで）確認・テストできます。
-
-
 
 ## 📁 プロジェクト構造
 

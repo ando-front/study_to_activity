@@ -1,8 +1,8 @@
 """Study to Activity (S2A) - FastAPI Application Entry Point."""
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from database import engine, Base
-from routers import auth, plans, tasks, rules, wallet
+from backend.database import engine, Base
+from backend.routers import auth, plans, tasks, rules, wallet
 
 # Create all tables
 Base.metadata.create_all(bind=engine)

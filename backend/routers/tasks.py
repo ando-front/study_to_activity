@@ -3,12 +3,12 @@ from datetime import datetime, date
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from database import get_db
-from models import StudyTask, TaskStatus, StudyPlan
-from schemas import StudyTaskOut, StudyTaskUpdate, ChildDashboard, ParentDashboard
-from schemas import UserOut, StudyPlanOut, RewardRuleOut
-from models import User, UserRole, ActivityWallet, RewardRule, ActivityLog, RewardLog
-from reward_engine import evaluate_and_grant
+from backend.database import get_db
+from backend.models import StudyTask, TaskStatus, StudyPlan
+from backend.schemas import StudyTaskOut, StudyTaskUpdate, ChildDashboard, ParentDashboard
+from backend.schemas import UserOut, StudyPlanOut, RewardRuleOut
+from backend.models import User, UserRole, ActivityWallet, RewardRule, ActivityLog, RewardLog
+from backend.reward_engine import evaluate_and_grant
 
 router = APIRouter()
 

@@ -2,9 +2,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from database import get_db
-from models import RewardRule
-from schemas import RewardRuleCreate, RewardRuleOut, RewardRuleUpdate
+from backend.database import get_db
+from backend.models import RewardRule
+from backend.schemas import RewardRuleCreate, RewardRuleOut, RewardRuleUpdate
 
 router = APIRouter()
 

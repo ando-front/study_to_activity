@@ -3,9 +3,9 @@ from datetime import date
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from database import get_db
-from models import ActivityWallet, ActivityLog, RewardLog, User, UserRole
-from schemas import (
+from backend.database import get_db
+from backend.models import ActivityWallet, ActivityLog, RewardLog, User, UserRole
+from backend.schemas import (
     WalletOut, WalletAdjust, WalletSettingsUpdate,
     ActivityLogCreate, ActivityLogOut, RewardLogOut,
 )

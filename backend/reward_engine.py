@@ -2,7 +2,7 @@
 from datetime import date, datetime
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from models import (
+from backend.models import (
     StudyTask, TaskStatus, RewardRule, TriggerType,
     ActivityWallet, RewardLog, StudyPlan
 )

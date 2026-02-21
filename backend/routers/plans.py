@@ -3,9 +3,9 @@ from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from database import get_db
-from models import StudyPlan, StudyTask, User, UserRole
-from schemas import StudyPlanCreate, StudyPlanOut
+from backend.database import get_db
+from backend.models import StudyPlan, StudyTask, User, UserRole
+from backend.schemas import StudyPlanCreate, StudyPlanOut
 
 router = APIRouter()
 

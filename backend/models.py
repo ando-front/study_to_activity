@@ -7,7 +7,7 @@ from sqlalchemy import (
     ForeignKey, Enum as SAEnum, JSON
 )
 from sqlalchemy.orm import relationship
-from database import Base
+from backend.database import Base
 
 
 # --- Enums ---
