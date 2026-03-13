@@ -47,12 +47,17 @@ class User(Base):
     name = Column(String(100), nullable=False)
     role = Column(SAEnum(UserRole), nullable=False)
     pin = Column(String(10), nullable=True)  # Simple PIN auth
+    nintendo_session_token = Column(Text, nullable=True)  # Added for Switch integration
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
     study_plans = relationship("StudyPlan", back_populates="child")
     wallet = relationship("ActivityWallet", back_populates="child", uselist=False)
     activity_logs = relationship("ActivityLog", back_populates="child")
+
+    @property
+    def is_nintendo_linked(self) -> bool:
+        return bool(self.nintendo_session_token)
 
 
 class StudyPlan(Base):

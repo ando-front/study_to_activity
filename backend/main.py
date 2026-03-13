@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.database import engine, Base
-from backend.routers import auth, plans, tasks, rules, wallet
+from backend.routers import auth, plans, tasks, rules, wallet, switch
 
 # Create all tables
 Base.metadata.create_all(bind=engine)
@@ -28,6 +28,7 @@ app.include_router(plans.router, prefix="/api/plans", tags=["学習計画"])
 app.include_router(tasks.router, prefix="/api/tasks", tags=["タスク"])
 app.include_router(rules.router, prefix="/api/rules", tags=["報酬ルール"])
 app.include_router(wallet.router, prefix="/api/wallet", tags=["ウォレット"])
+app.include_router(switch.router, prefix="/api/switch", tags=["Nintendo Switch"])
 
 
 @app.get("/")

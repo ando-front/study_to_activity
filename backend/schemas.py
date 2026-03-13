@@ -16,6 +16,7 @@ class UserOut(BaseModel):
     id: int
     name: str
     role: str
+    is_nintendo_linked: bool = False
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -187,3 +188,22 @@ class RewardLogOut(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+# --- Switch Integration ---
+
+class SwitchAuthUrl(BaseModel):
+    url: str
+
+class SwitchConnectRequest(BaseModel):
+    user_id: int
+    response_url: str
+
+class SwitchDeviceOut(BaseModel):
+    device_id: str
+    name: str
+    current_limit: int
+
+class SwitchSyncResponse(BaseModel):
+    message: str
+    synced_devices: list[str]

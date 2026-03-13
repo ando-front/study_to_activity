@@ -13,7 +13,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { tasksApi } from "../../lib/api";
+import { tasksApi, switchApi } from "../../lib/api";
 
 export default function ParentDashboard() {
   const router = useRouter();
@@ -23,6 +23,10 @@ export default function ParentDashboard() {
   const [dash, setDash] = useState(null);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
+  const [showSwitchModal, setShowSwitchModal] = useState(false);
+  const [switchUrl, setSwitchUrl] = useState("");
+  const [responseUrl, setResponseUrl] = useState("");
+  const [syncing, setSyncing] = useState(false);
 
   /** 認証ガード: 親ロール以外はトップへリダイレクト */
   useEffect(() => {
@@ -75,6 +79,38 @@ export default function ParentDashboard() {
     } catch (e) { showToast(e.message, "error"); }
   };
 
+  /** Nintendo Account 連携開始 */
+  const startSwitchConnect = async () => {
+    try {
+      const { url } = await switchApi.getAuthUrl();
+      setSwitchUrl(url);
+      setShowSwitchModal(true);
+      // ブラウザで新しいタブを開く
+      window.open(url, '_blank');
+    } catch (e) { showToast(e.message, "error"); }
+  };
+
+  /** Nintendo Account 連携完了 */
+  const completeSwitchConnect = async () => {
+    try {
+      if (!responseUrl) return;
+      await switchApi.connect({ user_id: user.id, response_url: responseUrl });
+      showToast("Nintendo Account と連携しました！🎮");
+      setShowSwitchModal(false);
+      fetchData();
+    } catch (e) { showToast(e.message, "error"); }
+  };
+
+  /** Switch への同期実行 */
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      const res = await switchApi.sync(user.id);
+      showToast(`${res.synced_devices.join(", ")} へ同期完了！`);
+    } catch (e) { showToast(e.message, "error"); }
+    finally { setSyncing(false); }
+  };
+
   if (loading) return <div style={{ padding: 40, textAlign: "center", color: "var(--text-muted)" }}>読み込み中...</div>;
 
   return (
@@ -117,6 +153,29 @@ export default function ParentDashboard() {
           <div className="stat-card">
             <div className="stat-value">{dash?.active_rules?.length || 0}</div>
             <div className="stat-label">有効ルール</div>
+          </div>
+        </div>
+
+        {/* ===== デバイス連携 (Switch) ===== */}
+        <div className="card animate-in-delay" style={{ marginBottom: 24, background: "linear-gradient(135deg, #e60012, #ff4b2b)", color: "#fff" }}>
+          <h2 style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: 14, display: "flex", alignItems: "center", gap: 8, color: "#fff" }}>
+            🎮 Nintendo Switch 連携
+          </h2>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <p style={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>
+              {user?.is_nintendo_linked ? "連携済みです" : "アカウントを連携して、みまもり設定を自動更新しましょう"}
+            </p>
+            <div style={{ display: "flex", gap: 8 }}>
+              {user?.is_nintendo_linked ? (
+                <button className="btn btn-secondary btn-sm" onClick={handleSync} disabled={syncing}>
+                  {syncing ? "同期中..." : "今すぐ同期"}
+                </button>
+              ) : (
+                <button className="btn btn-secondary btn-sm" onClick={startSwitchConnect}>
+                  連携する
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -196,6 +255,32 @@ export default function ParentDashboard() {
           )}
         </div>
       </div>
+
+      {/* ===== Switch 連携モーダル ===== */}
+      {showSwitchModal && (
+        <div className="modal-overlay" onClick={() => setShowSwitchModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 500 }}>
+            <h2>Nintendo Account 連携</h2>
+            <p style={{ fontSize: "0.9rem", color: "var(--text-secondary)", marginBottom: 16 }}>
+              1. 開いた任天堂サイトでログインします。<br/>
+              2. ログイン後、「この人を選択」ボタンを<b>右クリックしてリンクをコピー</b>してください。<br/>
+              3. コピーしたリンクを下の欄に貼り付けてください。
+            </p>
+            <div className="form-group">
+              <label>コピーしたリンク / URL</label>
+              <input className="form-input" 
+                value={responseUrl} 
+                onChange={(e) => setResponseUrl(e.target.value)}
+                placeholder="npf71fb..."
+              />
+            </div>
+            <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
+              <button className="btn btn-primary" style={{ flex: 1 }} onClick={completeSwitchConnect}>連携を完了する</button>
+              <button className="btn btn-secondary" onClick={() => setShowSwitchModal(false)}>キャンセル</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ===== トースト通知 ===== */}
       {toast && <div className={`toast toast-${toast.type}`}>{toast.msg}</div>}
