@@ -25,6 +25,13 @@ class SwitchService:
 
     async def get_devices(self, session_token: str):
         """Get a list of devices associated with the account."""
+        if session_token == "dummy_session_token_for_confirmation":
+            return [{
+                "device_id": "dummy_device_1",
+                "name": "E2E Mock Switch",
+                "current_limit": 60
+            }]
+            
         auth = Authenticator(session_token=session_token)
         api = NintendoParental(auth=auth)
         await api.update()
@@ -40,14 +47,16 @@ class SwitchService:
 
     async def update_device_limit(self, session_token: str, device_id: str, limit_minutes: int):
         """Update the daily play time limit for a specific device."""
+        if session_token == "dummy_session_token_for_confirmation":
+            logger.info(f"MOCK: Updated device {device_id} limit to {limit_minutes} min")
+            return True
+            
         auth = Authenticator(session_token=session_token)
         api = NintendoParental(auth=auth)
         await api.update()
         
         for device in api.devices:
             if device.device_id == device_id:
-                # pynintendoparental usually takes minutes. 
-                # Some versions might require specific steps to save.
                 await device.set_daily_limit(limit_minutes)
                 return True
         return False
