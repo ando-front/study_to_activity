@@ -23,6 +23,23 @@ services:
         value: .
     autoDeploy: true
 
+  # Frontend service (Next.js)
+  - type: web
+    name: s2a-frontend
+    env: node
+    plan: free
+    buildCommand: |
+      cd frontend
+      npm ci
+      npm run build
+    startCommand: |
+      cd frontend
+      npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+    autoDeploy: true
+
 databases:
   - name: s2a-db
     plan: free # Can be changed to starter for persistence beyond 90 days
