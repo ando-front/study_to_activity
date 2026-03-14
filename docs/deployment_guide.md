@@ -1,101 +1,59 @@
-# 公式デプロイガイド (Render)
+# S2A プロダクトデプロイメントガイド
 
-> **バージョン**: v1.0
-> **目的**: 「Study to Activity」アプリケーションをRenderにデプロイするための公式手順書
+本ドキュメントでは、Study to Activity (S2A) を本番環境へデプロイするための手順と、セキュアな運用設定について説明します。
 
----
+## 1. システム構成（本番環境）
 
-## 1. 方針概要
+本番環境では、スケーラビリティと可用性を考慮し、以下の構成を推奨します。
 
-本プロジェクトのホスティング環境として、**Render** を公式に採用します。
+- **Frontend**: Next.js (Vercel または任意の CDN 付きホスティング)
+- **Backend**: FastAPI (Render, Railway, Heroku, または AWS/GCP のコンテナサービス)
+- **Database**: Managed PostgreSQL (Render, AWS RDS 等)
 
-### 1.1. なぜRenderか？
+## 2. Docker を使用したデプロイ
 
-Renderは、本プロジェクトの規模と目的に対して、以下の点でAWSやAzureのような大規模クラウドサービスより優れた選択肢です。
+すでにリポジトリには `Dockerfile` と `docker-compose.yml` が含まれています。
 
-- **圧倒的な使いやすさ (PaaS)**: RenderはPaaS (Platform as a Service) であり、開発者はサーバーやネットワークといったインフラを意識する必要がありません。アプリケーションのコードをGitHubにプッシュするだけで、ビルド、デプロイ、スケーリングが自動的に処理されます。
-- **コスト効率と予測可能性**: FastAPIバックエンドとPostgreSQLデータベースを**完全に無料**で運用開始できます。有料プランもリソースベースで非常にわかりやすく、意図しない高額請求のリスクが極めて低いです。
-- **開発スピードの向上**: インフラ構築に時間を費やすことなく、数クリックと簡単な設定でアプリケーションを公開できます。これにより、プロダクトの機能開発に集中できます。
+### ローカルでの本番構成テスト
+```bash
+docker-compose up --build
+```
 
-### 1.2. デプロイ構成
+## 3. 推奨デプロイプラットフォーム
 
-- **バックエンド**: Render Web Service (Python 3)
-- **データベース**: Render PostgreSQL (Managed Database)
-- **デプロイ方法**: GitHubリポジトリ連携による自動デプロイ
+### 3.1 Backend & Database (Render.com の例)
+1. **PostgreSQL データベースを作成**:
+   - `DATABASE_URL` を取得します。
+2. **Web Service を作成**:
+   - リポジトリを接続し、`Dockerfile Path` に `backend/Dockerfile` を指定します。
+   - 以下の環境変数を設定します:
+     - `DATABASE_URL`: (作成した PostgreSQL の URL)
+     - `ENV`: `production`
+     - `ALLOWED_ORIGINS`: `https://your-frontend-domain.com`
 
----
+### 3.2 Frontend (Vercel の例)
+1. **New Project を作成**:
+   - リポジトリを選択し、`Root Directory` に `frontend` を指定。
+2. **Build Settings**:
+   - Framework Preset: `Next.js`
+3. **Environment Variables**:
+   - `NEXT_PUBLIC_API_URL`: `https://your-backend-api.render.com/api`
 
-## 2. デプロイ手順
+## 4. セキュリティ設定
 
-### ステップ0: 事前準備
+デプロイ時には以下の項目を必ず確認してください。
 
-1.  **Renderアカウント作成**: [Render公式サイト](https://render.com/)でアカウントを作成します。GitHubアカウントでサインアップするのが最もスムーズです。
-2.  **コードの確認**:
-    - `backend/database.py` が環境変数 `DATABASE_URL` を読み込むように修正されていることを確認します（本手順で実施済み）。
-    - `requirements.txt` に `gunicorn` と `psycopg2-binary` が含まれていることを確認します（本手順で実施済み）。
+- **CORS 設定**: `ALLOWED_ORIGINS` をフロントエンドのドメインのみに制限してください。
+- **デバッグ用エンドポイント**: `ENV=production` に設定することで、テスト用のデータリセットエンドポイントが自動的に無効化されます。
+- **HTTPS**: すべての通信は HTTPS 経由で行う必要があります（Vercel/Render では自動適用されます）。
+- **データベースのパスワード**: `docker-compose.yml` に記載されているデフォルトパスワードは開発用です。本番環境では必ず強固なパスワードを生成し、環境変数として注入してください。
+- **機密情報の管理**: Nintendo Account のセッショントークンなどは暗号化されたデータベースに保存され、API 経由で直接外部へ漏洩しないよう実装されています。
 
-### ステップ1: PostgreSQLデータベースの作成
+## 5. データベース移行 (SQLite -> PostgreSQL)
 
-最初に、データを永続化するためのデータベースをRender上に作成します。
-
-1.  Renderダッシュボードで **[New] > [PostgreSQL]** を選択します。
-2.  以下の項目を設定します。
-    - **Name**: データベースの識別名（例: `s2a-database`）
-    - **Database**: データベース名（例: `s2a_db`）
-    - **User**: ユーザー名（例: `s2a_user`）
-    - **Region**: 最も近いリージョンを選択
-    - **Freeプラン**: Freeプランが選択されていることを確認します。
-3.  **[Create Database]** をクリックします。作成には数分かかります。
-4.  作成後、データベースのダッシュボードが表示されます。**"Connections"** タブにある **`Internal Database URL`** をコピーしておきます。これは次のステップで使用します。
-
-### ステップ2: バックエンド (Web Service) のデプロイ
-
-次に、FastAPIアプリケーション本体をデプロイします。
-
-1.  Renderダッシュボードで **[New] > [Web Service]** を選択します。
-2.  **"Build and deploy from a Git repository"** を選択し、本プロジェクトのGitHubリポジトリを接続します。
-3.  以下の項目を設定します。
-    - **Name**: Webサービスの名前（例: `study-to-activity-api`）
-    - **Region**: データベースと同じリージョンを選択します。
-    - **Branch**: デプロイしたいブランチ（例: `main`）
-    - **Root Directory**: `backend`
-        - *重要: ソースコードが `backend` ディレクトリ内にあるため、これを指定することでビルドコマンド等の基準パスが `backend` になります。*
-    - **Runtime**: `Python 3`
-    - **Build Command**: `pip install -r requirements.txt`
-    - **Start Command**: `gunicorn -w 4 -k uvicorn.workers.UvicornWorker main:app`
-        - *Root Directoryを指定したため、パスは `backend.main:app` ではなく `main:app` になります。*
-    - **Instance Type**: `Free`
-
-4.  **[Create Web Service]** をクリックする前に、**"Advanced Settings"** を展開します。
-
-### ステップ3: 環境変数の設定
-
-Webサービスがデータベースに接続できるよう、環境変数を設定します。
-
-1.  "Advanced Settings" の中で、**[Add Environment Variable]** をクリックします。
-2.  以下の環境変数を設定します。
-    - **Key**: `DATABASE_URL`
-    - **Value**: ステップ1でコピーした **`Internal Database URL`** を貼り付けます。
-3.  もう一つ、Pythonのバージョンを指定する環境変数を追加すると、より安定したビルドが期待できます。
-    - **Key**: `PYTHON_VERSION`
-    - **Value**: `3.11` (または使用したいPythonのバージョン)
-
-### ステップ4: デプロイの実行と確認
-
-1.  すべての設定が完了したら、ページ下部の **[Create Web Service]** をクリックします。
-2.  最初のデプロイが自動的に開始されます。ログ画面でビルドとデプロイの進捗を確認できます。
-3.  デプロイが成功すると、WebサービスのURL（例: `https://study-to-activity-api.onrender.com`）が発行され、"Live"と表示されます。
-4.  発行されたURLの末尾に `/docs` をつけてブラウザでアクセスし、FastAPIのSwagger UIが表示されればデプロイ成功です。
+バックエンドは共通の SQLAlchemy インターフェースを使用しているため、`DATABASE_URL` を変更するだけで PostgreSQL に対応します。初回起動時に `Base.metadata.create_all` によってテーブルが自動生成されます。
 
 ---
 
-## 3. 運用と管理
-
-### ローカル開発
-
-- ローカルで開発を続ける際は、`DATABASE_URL` 環境変数を設定せずに `uvicorn` コマンドで起動すれば、従来通り `s2a.db` というSQLiteファイルが使われます。
-- 本番DBの情報をローカルで使いたい場合は、`.env` ファイルを作成し `DATABASE_URL=...` と記述して利用します（`.gitignore` により `.env` はコミットされません）。
-
-### 自動デプロイ
-
-- 上記設定後、GitHubリポジトリの指定ブランチ（例: `main`）に `git push` すると、Renderが自動的に変更を検知し、新しいバージョンのデプロイを開始します。
+> [!CAUTION]
+> **重要**: 本番環境では、`.env` ファイルを絶対に Git リポジトリにコミットしないでください。ホスティングサービスのコントロールパネルから直接設定することを推奨します。

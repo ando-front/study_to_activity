@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from backend.database import get_db
 from backend.models import User, UserRole, ActivityWallet
 from backend.schemas import UserCreate, UserOut, LoginRequest, LoginResponse
+from backend.security import hash_pin, verify_pin
 
 router = APIRouter()
 
@@ -15,7 +16,7 @@ def register_user(data: UserCreate, db: Session = Depends(get_db)):
     user = User(
         name=data.name,
         role=UserRole(data.role),
-        pin=data.pin,
+        pin=hash_pin(data.pin),
     )
     db.add(user)
     db.flush()
@@ -37,7 +38,7 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=404, detail="ユーザーが見つかりません")
 
-    if user.pin and user.pin != data.pin:
+    if user.pin and not verify_pin(data.pin, user.pin):
         raise HTTPException(status_code=401, detail="PINが正しくありません")
 
     return LoginResponse(user=UserOut.model_validate(user), message="ログイン成功")

@@ -25,7 +25,7 @@ async def connect_switch(data: SwitchConnectRequest, db: Session = Depends(get_d
     
     try:
         session_token = await switch_service.complete_login(data.response_url)
-        user.nintendo_session_token = session_token
+        user.set_nintendo_token(session_token)
         db.commit()
         return {"message": "Nintendo Account と連携しました"}
     except Exception as e:
@@ -40,7 +40,8 @@ async def list_switch_devices(user_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Nintendo Account が連携されていません")
     
     try:
-        devices = await switch_service.get_devices(user.nintendo_session_token)
+        token = user.get_nintendo_token()
+        devices = await switch_service.get_devices(token)
         return devices
     except Exception as e:
         logger.error(f"Failed to list devices: {e}")
@@ -65,11 +66,12 @@ async def sync_balance_to_switch(user_id: int, db: Session = Depends(get_db)):
     limit = min(balance, child.wallet.daily_limit_minutes)
     
     try:
-        devices = await switch_service.get_devices(parent.nintendo_session_token)
+        token = parent.get_nintendo_token()
+        devices = await switch_service.get_devices(token)
         synced_names = []
         for dev in devices:
             success = await switch_service.update_device_limit(
-                parent.nintendo_session_token, 
+                token, 
                 dev["device_id"], 
                 limit
             )

@@ -59,6 +59,14 @@ class User(Base):
     def is_nintendo_linked(self) -> bool:
         return bool(self.nintendo_session_token)
 
+    def get_nintendo_token(self) -> str:
+        from backend.security import decrypt_token
+        return decrypt_token(self.nintendo_session_token)
+
+    def set_nintendo_token(self, token: str):
+        from backend.security import encrypt_token
+        self.nintendo_session_token = encrypt_token(token)
+
 
 class StudyPlan(Base):
     __tablename__ = "study_plans"

@@ -33,10 +33,11 @@ async def trigger_switch_sync(db: Session, child_id: int):
 
         logger.info(f"Starting background sync for child {child_id} (balance: {balance}, limit: {limit}m)")
         
-        devices = await switch_service.get_devices(parent.nintendo_session_token)
+        token = parent.get_nintendo_token()
+        devices = await switch_service.get_devices(token)
         for dev in devices:
             success = await switch_service.update_device_limit(
-                parent.nintendo_session_token, 
+                token, 
                 dev["device_id"], 
                 limit
             )

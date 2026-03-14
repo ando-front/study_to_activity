@@ -2,6 +2,7 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+import os
 from backend import database
 from backend.database import engine, Base
 from backend.routers import auth, plans, tasks, rules, wallet, switch
@@ -15,10 +16,15 @@ app = FastAPI(
     version="0.1.0",
 )
 
-# CORS settings (allow frontend dev server)
+# ENV mode
+IS_PROD = os.getenv("ENV") == "production"
+
+# CORS settings
+origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -43,9 +49,11 @@ def health():
     return {"status": "ok"}
 
 
-# Test-only endpoint for resetting the database during E2E testing
+# Test-only endpoint (DISABLED in production)
 @app.post("/api/test/reset")
 def reset_database(db: Session = Depends(database.get_db)):
+    if IS_PROD:
+        return {"error": "Reset not allowed in production"}, 403
     from backend.models import StudyTask, StudyPlan, ActivityLog, RewardLog, ActivityWallet
     db.query(ActivityLog).delete()
     db.query(RewardLog).delete()
