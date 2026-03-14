@@ -11,9 +11,16 @@
  */
 
 /** バックエンド API のベース URL（環境変数で上書き可能） */
-const API_BASE = (
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"
-).replace(/\/$/, "");
+const DEFAULT_API_BASE =
+  typeof window !== "undefined" &&
+  !["localhost", "127.0.0.1"].includes(window.location.hostname)
+    ? "https://s2a-backend.onrender.com/api"
+    : "http://localhost:8000/api";
+
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || DEFAULT_API_BASE).replace(
+  /\/$/,
+  ""
+);
 
 /**
  * 共通の HTTP リクエスト関数。
