@@ -127,6 +127,7 @@ export default function PlansPage() {
             <a href="/parent/plans" className="active">計画</a>
             <a href="/parent/rules">ルール</a>
             <a href="/parent/wallet">ウォレット</a>
+            <a data-testid="logout-link" href="/" onClick={(e) => { e.preventDefault(); localStorage.removeItem("s2a_user"); router.push("/"); }}>ログアウト</a>
           </div>
         </div>
       </nav>
@@ -138,7 +139,7 @@ export default function PlansPage() {
             <h1>📅 学習計画管理</h1>
             <p>お子様の学習計画を作成・管理</p>
           </div>
-          <button className="btn btn-primary" onClick={() => setShowModal(true)}>＋ 新規作成</button>
+          <button data-testid="create-plan-button" className="btn btn-primary" onClick={() => setShowModal(true)}>＋ 新規作成</button>
         </div>
 
         {/* ===== 計画一覧 ===== */}
@@ -190,7 +191,7 @@ export default function PlansPage() {
               <div className="grid-2">
                 <div className="form-group">
                   <label>お子様</label>
-                  <select className="form-input" value={childId} onChange={(e) => setChildId(e.target.value)} required>
+                  <select data-testid="child-select" className="form-input" value={childId} onChange={(e) => setChildId(e.target.value)} required>
                     {children.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                 </div>
@@ -215,7 +216,7 @@ export default function PlansPage() {
                     <div className="grid-2">
                       <div className="form-group">
                         <label>教科</label>
-                        <input className="form-input" value={t.subject} onChange={(e) => updateTask(i, "subject", e.target.value)} placeholder="例: 算数" />
+                        <input data-testid="task-subject-input" className="form-input" value={t.subject} onChange={(e) => updateTask(i, "subject", e.target.value)} placeholder="例: 算数" />
                       </div>
                       <div className="form-group">
                         <label>時間（分）</label>
@@ -235,7 +236,7 @@ export default function PlansPage() {
               </div>
 
               <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
-                <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>作成</button>
+                <button data-testid="submit-plan-button" type="submit" className="btn btn-primary" style={{ flex: 1 }}>作成</button>
                 <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>キャンセル</button>
               </div>
             </form>

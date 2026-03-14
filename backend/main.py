@@ -1,6 +1,8 @@
 """Study to Activity (S2A) - FastAPI Application Entry Point."""
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
+from backend import database
 from backend.database import engine, Base
 from backend.routers import auth, plans, tasks, rules, wallet, switch
 
@@ -39,3 +41,20 @@ def root():
 @app.get("/api/health")
 def health():
     return {"status": "ok"}
+
+
+# Test-only endpoint for resetting the database during E2E testing
+@app.post("/api/test/reset")
+def reset_database(db: Session = Depends(database.get_db)):
+    from backend.models import StudyTask, StudyPlan, ActivityLog, RewardLog, ActivityWallet
+    db.query(ActivityLog).delete()
+    db.query(RewardLog).delete()
+    db.query(StudyTask).delete()
+    db.query(StudyPlan).delete()
+    db.query(ActivityWallet).delete()
+    db.commit()
+    return {"message": "Database reset for testing"}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

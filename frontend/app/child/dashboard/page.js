@@ -105,7 +105,7 @@ export default function ChildDashboard() {
         <div className="nav-inner">
           <div className="nav-brand">📚 <span>{user?.name}のページ</span></div>
           <div className="nav-links">
-            <a href="/" onClick={(e) => { e.preventDefault(); localStorage.removeItem("s2a_user"); router.push("/"); }}>ログアウト</a>
+            <a data-testid="logout-link" href="/" onClick={(e) => { e.preventDefault(); localStorage.removeItem("s2a_user"); router.push("/"); }}>ログアウト</a>
           </div>
         </div>
       </nav>
@@ -189,10 +189,10 @@ export default function ChildDashboard() {
                 {/* 操作ボタン: ステータスに応じた次のアクションのみ表示 */}
                 <div className="task-actions">
                   {t.status === "pending" && (
-                    <button className="btn btn-primary btn-sm" onClick={() => handleStart(t.id)}>開始</button>
+                    <button data-testid="task-start-button" className="btn btn-primary btn-sm" onClick={() => handleStart(t.id)}>開始</button>
                   )}
                   {t.status === "in_progress" && (
-                    <button className="btn btn-success btn-sm" onClick={() => handleComplete(t.id)}>完了</button>
+                    <button data-testid="task-complete-button" className="btn btn-success btn-sm" onClick={() => handleComplete(t.id)}>完了</button>
                   )}
                   {t.status === "rejected" && (
                     <button className="btn btn-primary btn-sm" onClick={() => handleStart(t.id)}>やり直す</button>
