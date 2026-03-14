@@ -15,7 +15,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { rulesApi } from "@/app/lib/api";
+import { rulesApi } from "@/lib/api";
 
 /** トリガータイプのコード → 日本語ラベルの対応表 */
 const TRIGGER_LABELS = {
