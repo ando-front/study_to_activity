@@ -1,6 +1,6 @@
 """Tasks router - manage study task lifecycle (start, complete, approve)."""
 from datetime import datetime, date
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 
 from backend.database import get_db
@@ -9,6 +9,7 @@ from backend.schemas import StudyTaskOut, StudyTaskUpdate, ChildDashboard, Paren
 from backend.schemas import UserOut, StudyPlanOut, RewardRuleOut
 from backend.models import User, UserRole, ActivityWallet, RewardRule, ActivityLog, RewardLog
 from backend.reward_engine import evaluate_and_grant
+from backend.sync_utils import trigger_switch_sync
 
 router = APIRouter()
 
@@ -87,6 +88,7 @@ def complete_task(
 def approve_task(
     task_id: int,
     parent_id: int,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ):
     """Approve a completed task (parent action). Triggers reward evaluation."""
@@ -112,6 +114,10 @@ def approve_task(
     # Evaluate reward rules after approval
     child_id = task.plan.child_id
     granted = evaluate_and_grant(db, child_id)
+    
+    # If rewards were granted, trigger Switch sync in background
+    if granted:
+        background_tasks.add_task(trigger_switch_sync, db, child_id)
 
     return {
         "task": StudyTaskOut.model_validate(task),
