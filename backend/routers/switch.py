@@ -21,8 +21,7 @@ logger = logging.getLogger(__name__)
 @router.get("/auth-url", response_model=SwitchAuthUrl)
 async def get_switch_auth_url():
     """Get the URL to start Nintendo Account authentication."""
-    url = await switch_service.get_auth_url()
-    return {"url": url}
+    return await switch_service.get_auth_url()
 
 
 @router.post("/connect", response_model=dict)
@@ -35,7 +34,9 @@ async def connect_switch(
         raise HTTPException(status_code=404, detail="ユーザーが見つかりません")
 
     try:
-        session_token = await switch_service.complete_login(data.response_url)
+        session_token = await switch_service.complete_login(
+            data.response_url, data.verifier
+        )
         user.set_nintendo_token(session_token)
         db.commit()
         return {"message": "Nintendo Account と連携しました"}

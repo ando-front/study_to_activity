@@ -203,11 +203,13 @@ class RewardLogOut(BaseModel):
 
 class SwitchAuthUrl(BaseModel):
     url: str
+    verifier: str
 
 
 class SwitchConnectRequest(BaseModel):
     user_id: int
     response_url: str
+    verifier: Optional[str] = None
 
 
 class SwitchDeviceOut(BaseModel):

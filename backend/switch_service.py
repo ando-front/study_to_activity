@@ -12,17 +12,25 @@ class SwitchService:
 
     async def get_auth_url(self):
         """Generate the URL for Nintendo Account login."""
-        self._auth = Authenticator()
-        return self._auth.get_auth_url()
+        self._auth = Authenticator.generate_login()
+        return {
+            "url": self._auth.login_url,
+            "verifier": self._auth._auth_code_verifier,
+        }
 
-    async def complete_login(self, response_url: str):
+    async def complete_login(self, response_url: str, verifier: str | None = None):
         """Complete the login process and return the session token."""
-        if not self._auth:
-            self._auth = Authenticator()
+        auth = None
+        if verifier:
+            auth = Authenticator(auth_code_verifier=verifier)
+        elif self._auth:
+            auth = self._auth
+        else:
+            raise RuntimeError("認証開始からやり直してください")
 
-        # This will extract the code and get the session token
-        session_token = await self._auth.complete_login(response_url)
-        return session_token
+        auth = await Authenticator.complete_login(auth, response_url)
+        self._auth = None
+        return auth.get_session_token
 
     async def get_devices(self, session_token: str):
         """Get a list of devices associated with the account."""

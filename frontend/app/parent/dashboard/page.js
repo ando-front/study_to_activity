@@ -25,6 +25,7 @@ export default function ParentDashboard() {
   const [toast, setToast] = useState(null);
   const [showSwitchModal, setShowSwitchModal] = useState(false);
   const [switchUrl, setSwitchUrl] = useState("");
+  const [switchVerifier, setSwitchVerifier] = useState("");
   const [responseUrl, setResponseUrl] = useState("");
   const [syncing, setSyncing] = useState(false);
 
@@ -82,8 +83,9 @@ export default function ParentDashboard() {
   /** Nintendo Account 連携開始 */
   const startSwitchConnect = async () => {
     try {
-      const { url } = await switchApi.getAuthUrl();
+      const { url, verifier } = await switchApi.getAuthUrl();
       setSwitchUrl(url);
+      setSwitchVerifier(verifier);
       setShowSwitchModal(true);
       // ブラウザで新しいタブを開く
       window.open(url, '_blank');
@@ -94,7 +96,7 @@ export default function ParentDashboard() {
   const completeSwitchConnect = async () => {
     try {
       if (!responseUrl) return;
-      await switchApi.connect({ user_id: user.id, response_url: responseUrl });
+      await switchApi.connect({ user_id: user.id, response_url: responseUrl, verifier: switchVerifier });
       
       // ユーザー情報を再取得して state と localStorage を更新
       const updatedUser = await authApi.getUser(user.id);
@@ -103,6 +105,8 @@ export default function ParentDashboard() {
 
       showToast("Nintendo Account と連携しました！🎮");
       setShowSwitchModal(false);
+      setSwitchVerifier("");
+      setResponseUrl("");
       fetchData();
     } catch (e) { showToast(e.message, "error"); }
   };
