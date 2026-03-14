@@ -1,24 +1,31 @@
 """Wallet router - activity time balance management and consumption tracking."""
+
 from datetime import date
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from backend.database import get_db
-from backend.models import ActivityWallet, ActivityLog, RewardLog, User, UserRole
+from backend.models import ActivityLog, ActivityWallet, RewardLog
 from backend.schemas import (
-    WalletOut, WalletAdjust, WalletSettingsUpdate,
-    ActivityLogCreate, ActivityLogOut, RewardLogOut,
+    ActivityLogCreate,
+    ActivityLogOut,
+    RewardLogOut,
+    WalletAdjust,
+    WalletOut,
+    WalletSettingsUpdate,
 )
 
 router = APIRouter()
 
 
 @router.get("/{child_id}", response_model=WalletOut)
-def get_wallet(child_id: int, db: Session = Depends(get_db)):
+def get_wallet(child_id: int, db: Annotated[Session, Depends(get_db)]):
     """Get a child's activity wallet."""
-    wallet = db.query(ActivityWallet).filter(
-        ActivityWallet.child_id == child_id
-    ).first()
+    wallet = (
+        db.query(ActivityWallet).filter(ActivityWallet.child_id == child_id).first()
+    )
     if not wallet:
         raise HTTPException(status_code=404, detail="ウォレットが見つかりません")
     return wallet
@@ -26,12 +33,12 @@ def get_wallet(child_id: int, db: Session = Depends(get_db)):
 
 @router.post("/{child_id}/adjust", response_model=WalletOut)
 def adjust_balance(
-    child_id: int, data: WalletAdjust, db: Session = Depends(get_db)
+    child_id: int, data: WalletAdjust, db: Annotated[Session, Depends(get_db)]
 ):
     """Manually adjust wallet balance (parent action). Positive to add, negative to subtract."""
-    wallet = db.query(ActivityWallet).filter(
-        ActivityWallet.child_id == child_id
-    ).first()
+    wallet = (
+        db.query(ActivityWallet).filter(ActivityWallet.child_id == child_id).first()
+    )
     if not wallet:
         raise HTTPException(status_code=404, detail="ウォレットが見つかりません")
 
@@ -57,12 +64,12 @@ def adjust_balance(
 
 @router.patch("/{child_id}/settings", response_model=WalletOut)
 def update_wallet_settings(
-    child_id: int, data: WalletSettingsUpdate, db: Session = Depends(get_db)
+    child_id: int, data: WalletSettingsUpdate, db: Annotated[Session, Depends(get_db)]
 ):
     """Update wallet settings (daily limit, carry over)."""
-    wallet = db.query(ActivityWallet).filter(
-        ActivityWallet.child_id == child_id
-    ).first()
+    wallet = (
+        db.query(ActivityWallet).filter(ActivityWallet.child_id == child_id).first()
+    )
     if not wallet:
         raise HTTPException(status_code=404, detail="ウォレットが見つかりません")
 
@@ -76,12 +83,12 @@ def update_wallet_settings(
 
 @router.post("/{child_id}/consume", response_model=ActivityLogOut)
 def consume_activity(
-    child_id: int, data: ActivityLogCreate, db: Session = Depends(get_db)
+    child_id: int, data: ActivityLogCreate, db: Annotated[Session, Depends(get_db)]
 ):
     """Record activity consumption (e.g. 30 min Switch play)."""
-    wallet = db.query(ActivityWallet).filter(
-        ActivityWallet.child_id == child_id
-    ).first()
+    wallet = (
+        db.query(ActivityWallet).filter(ActivityWallet.child_id == child_id).first()
+    )
     if not wallet:
         raise HTTPException(status_code=404, detail="ウォレットが見つかりません")
 
@@ -109,8 +116,8 @@ def consume_activity(
 @router.get("/{child_id}/logs", response_model=list[ActivityLogOut])
 def get_activity_logs(
     child_id: int,
+    db: Annotated[Session, Depends(get_db)],
     limit: int = 50,
-    db: Session = Depends(get_db),
 ):
     """Get activity consumption logs for a child."""
     return (
@@ -125,8 +132,8 @@ def get_activity_logs(
 @router.get("/{child_id}/rewards", response_model=list[RewardLogOut])
 def get_reward_logs(
     child_id: int,
+    db: Annotated[Session, Depends(get_db)],
     granted_date: date | None = None,
-    db: Session = Depends(get_db),
 ):
     """Get reward grant history for a child."""
     query = db.query(RewardLog).filter(RewardLog.child_id == child_id)

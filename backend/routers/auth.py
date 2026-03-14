@@ -1,17 +1,20 @@
 """Authentication router - simple PIN-based auth for family use."""
+
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from backend.database import get_db
-from backend.models import User, UserRole, ActivityWallet
-from backend.schemas import UserCreate, UserOut, LoginRequest, LoginResponse
+from backend.models import ActivityWallet, User, UserRole
+from backend.schemas import LoginRequest, LoginResponse, UserCreate, UserOut
 from backend.security import hash_pin, verify_pin
 
 router = APIRouter()
 
 
 @router.post("/register", response_model=UserOut)
-def register_user(data: UserCreate, db: Session = Depends(get_db)):
+def register_user(data: UserCreate, db: Annotated[Session, Depends(get_db)]):
     """Register a new parent or child user."""
     user = User(
         name=data.name,
@@ -32,7 +35,7 @@ def register_user(data: UserCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=LoginResponse)
-def login(data: LoginRequest, db: Session = Depends(get_db)):
+def login(data: LoginRequest, db: Annotated[Session, Depends(get_db)]):
     """Login with user ID and optional PIN."""
     user = db.query(User).filter(User.id == data.user_id).first()
     if not user:
@@ -45,13 +48,13 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
 
 
 @router.get("/users", response_model=list[UserOut])
-def list_users(db: Session = Depends(get_db)):
+def list_users(db: Annotated[Session, Depends(get_db)]):
     """List all users (for family member selection)."""
     return db.query(User).all()
 
 
 @router.get("/users/{user_id}", response_model=UserOut)
-def get_user(user_id: int, db: Session = Depends(get_db)):
+def get_user(user_id: int, db: Annotated[Session, Depends(get_db)]):
     """Get a specific user."""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:

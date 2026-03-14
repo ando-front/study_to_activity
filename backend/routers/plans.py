@@ -1,5 +1,8 @@
 """Study plans router - CRUD for daily/weekly study plans."""
+
 from datetime import date
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
@@ -11,12 +14,14 @@ router = APIRouter()
 
 
 @router.post("/", response_model=StudyPlanOut)
-def create_plan(data: StudyPlanCreate, db: Session = Depends(get_db)):
+def create_plan(data: StudyPlanCreate, db: Annotated[Session, Depends(get_db)]):
     """Create a new study plan with tasks."""
     # Verify child exists
-    child = db.query(User).filter(
-        User.id == data.child_id, User.role == UserRole.CHILD
-    ).first()
+    child = (
+        db.query(User)
+        .filter(User.id == data.child_id, User.role == UserRole.CHILD)
+        .first()
+    )
     if not child:
         raise HTTPException(status_code=404, detail="子供ユーザーが見つかりません")
 
@@ -46,9 +51,9 @@ def create_plan(data: StudyPlanCreate, db: Session = Depends(get_db)):
 
 @router.get("/", response_model=list[StudyPlanOut])
 def list_plans(
-    child_id: int | None = Query(None),
-    plan_date: date | None = Query(None),
-    db: Session = Depends(get_db),
+    db: Annotated[Session, Depends(get_db)],
+    child_id: Annotated[int | None, Query()] = None,
+    plan_date: Annotated[date | None, Query()] = None,
 ):
     """List study plans, optionally filtered by child and/or date."""
     query = db.query(StudyPlan)
@@ -60,7 +65,7 @@ def list_plans(
 
 
 @router.get("/{plan_id}", response_model=StudyPlanOut)
-def get_plan(plan_id: int, db: Session = Depends(get_db)):
+def get_plan(plan_id: int, db: Annotated[Session, Depends(get_db)]):
     """Get a specific study plan with its tasks."""
     plan = db.query(StudyPlan).filter(StudyPlan.id == plan_id).first()
     if not plan:
@@ -69,7 +74,7 @@ def get_plan(plan_id: int, db: Session = Depends(get_db)):
 
 
 @router.delete("/{plan_id}")
-def delete_plan(plan_id: int, db: Session = Depends(get_db)):
+def delete_plan(plan_id: int, db: Annotated[Session, Depends(get_db)]):
     """Delete a study plan (cascades to tasks)."""
     plan = db.query(StudyPlan).filter(StudyPlan.id == plan_id).first()
     if not plan:
@@ -80,7 +85,9 @@ def delete_plan(plan_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/{plan_id}/tasks", response_model=StudyPlanOut)
-def add_task_to_plan(plan_id: int, task_data: dict, db: Session = Depends(get_db)):
+def add_task_to_plan(
+    plan_id: int, task_data: dict, db: Annotated[Session, Depends(get_db)]
+):
     """Add a new task to an existing plan."""
     plan = db.query(StudyPlan).filter(StudyPlan.id == plan_id).first()
     if not plan:

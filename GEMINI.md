@@ -20,7 +20,9 @@
 
 - **バックエンド:**
     - **フレームワーク:** FastAPI
-    - **データベース:** ORMとしてSQLAlchemyを使用し、初期設定ではSQLiteを利用します。
+    - **データベース:** ORMとしてSQLAlchemyを使用します。
+        - **ローカル開発:** デフォルトでは、プロジェクトルートに `s2a.db` という名前の **SQLite** ファイルが自動的に作成されます。
+        - **本番環境:** `DATABASE_URL` 環境変数を設定することで、**PostgreSQL** などの他のデータベースに接続できます。`psycopg2-binary` が `backend/requirements.txt` に含まれているのはこのためです。
     - **Webサーバー:** Uvicorn
     - **依存関係:** Pythonのすべての依存関係は `backend/requirements.txt` に記載されています。
 - **フロントエンド (計画中):**

@@ -1,10 +1,12 @@
 """Pydantic schemas for request/response serialization."""
-from datetime import datetime, date
+
+from datetime import date, datetime
 from typing import Optional
+
 from pydantic import BaseModel
 
-
 # --- User ---
+
 
 class UserCreate(BaseModel):
     name: str
@@ -33,6 +35,7 @@ class LoginResponse(BaseModel):
 
 
 # --- Study Plan ---
+
 
 class StudyTaskCreate(BaseModel):
     subject: str
@@ -85,6 +88,7 @@ class StudyPlanOut(BaseModel):
 
 # --- Reward Rule ---
 
+
 class RewardRuleCreate(BaseModel):
     trigger_type: str
     trigger_condition: Optional[dict] = None
@@ -115,6 +119,7 @@ class RewardRuleUpdate(BaseModel):
 
 # --- Activity Wallet ---
 
+
 class WalletOut(BaseModel):
     id: int
     child_id: int
@@ -138,6 +143,7 @@ class WalletSettingsUpdate(BaseModel):
 
 # --- Activity Log ---
 
+
 class ActivityLogCreate(BaseModel):
     activity_type: str = "other"  # "switch", "tablet", "other"
     description: Optional[str] = None
@@ -157,6 +163,7 @@ class ActivityLogOut(BaseModel):
 
 
 # --- Dashboard ---
+
 
 class ChildDashboard(BaseModel):
     user: UserOut
@@ -179,6 +186,7 @@ class ParentDashboard(BaseModel):
 
 # --- Reward Log ---
 
+
 class RewardLogOut(BaseModel):
     id: int
     child_id: int
@@ -192,17 +200,21 @@ class RewardLogOut(BaseModel):
 
 # --- Switch Integration ---
 
+
 class SwitchAuthUrl(BaseModel):
     url: str
+
 
 class SwitchConnectRequest(BaseModel):
     user_id: int
     response_url: str
 
+
 class SwitchDeviceOut(BaseModel):
     device_id: str
     name: str
     current_limit: int
+
 
 class SwitchSyncResponse(BaseModel):
     message: str

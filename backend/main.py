@@ -1,11 +1,15 @@
 """Study to Activity (S2A) - FastAPI Application Entry Point."""
-from fastapi import FastAPI, Depends
+
+import os
+from typing import Annotated
+
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-import os
+
 from backend import database
-from backend.database import engine, Base
-from backend.routers import auth, plans, tasks, rules, wallet, switch
+from backend.database import Base, engine
+from backend.routers import auth, plans, rules, switch, tasks, wallet
 
 # Create all tables
 Base.metadata.create_all(bind=engine)
@@ -20,7 +24,9 @@ app = FastAPI(
 IS_PROD = os.getenv("ENV") == "production"
 
 # CORS settings
-origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
+origins = os.getenv(
+    "ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000"
+).split(",")
 
 app.add_middleware(
     CORSMiddleware,
@@ -51,10 +57,17 @@ def health():
 
 # Test-only endpoint (DISABLED in production)
 @app.post("/api/test/reset")
-def reset_database(db: Session = Depends(database.get_db)):
+def reset_database(db: Annotated[Session, Depends(database.get_db)]):
     if IS_PROD:
         return {"error": "Reset not allowed in production"}, 403
-    from backend.models import StudyTask, StudyPlan, ActivityLog, RewardLog, ActivityWallet
+    from backend.models import (
+        ActivityLog,
+        ActivityWallet,
+        RewardLog,
+        StudyPlan,
+        StudyTask,
+    )
+
     db.query(ActivityLog).delete()
     db.query(RewardLog).delete()
     db.query(StudyTask).delete()
@@ -63,6 +76,8 @@ def reset_database(db: Session = Depends(database.get_db)):
     db.commit()
     return {"message": "Database reset for testing"}
 
+
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

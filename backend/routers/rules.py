@@ -1,4 +1,7 @@
 """Reward rules router - CRUD for reward rule configuration."""
+
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -10,7 +13,7 @@ router = APIRouter()
 
 
 @router.post("/", response_model=RewardRuleOut)
-def create_rule(data: RewardRuleCreate, db: Session = Depends(get_db)):
+def create_rule(data: RewardRuleCreate, db: Annotated[Session, Depends(get_db)]):
     """Create a new reward rule."""
     rule = RewardRule(
         trigger_type=data.trigger_type,
@@ -26,16 +29,18 @@ def create_rule(data: RewardRuleCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/", response_model=list[RewardRuleOut])
-def list_rules(active_only: bool = False, db: Session = Depends(get_db)):
+def list_rules(
+    active_only: bool = False, db: Annotated[Session, Depends(get_db)] = None
+):
     """List all reward rules, optionally only active ones."""
     query = db.query(RewardRule)
     if active_only:
-        query = query.filter(RewardRule.is_active == True)
+        query = query.filter(RewardRule.is_active)
     return query.all()
 
 
 @router.get("/{rule_id}", response_model=RewardRuleOut)
-def get_rule(rule_id: int, db: Session = Depends(get_db)):
+def get_rule(rule_id: int, db: Annotated[Session, Depends(get_db)]):
     """Get a specific reward rule."""
     rule = db.query(RewardRule).filter(RewardRule.id == rule_id).first()
     if not rule:
@@ -44,7 +49,9 @@ def get_rule(rule_id: int, db: Session = Depends(get_db)):
 
 
 @router.patch("/{rule_id}", response_model=RewardRuleOut)
-def update_rule(rule_id: int, data: RewardRuleUpdate, db: Session = Depends(get_db)):
+def update_rule(
+    rule_id: int, data: RewardRuleUpdate, db: Annotated[Session, Depends(get_db)]
+):
     """Update a reward rule."""
     rule = db.query(RewardRule).filter(RewardRule.id == rule_id).first()
     if not rule:
@@ -59,7 +66,7 @@ def update_rule(rule_id: int, data: RewardRuleUpdate, db: Session = Depends(get_
 
 
 @router.delete("/{rule_id}")
-def delete_rule(rule_id: int, db: Session = Depends(get_db)):
+def delete_rule(rule_id: int, db: Annotated[Session, Depends(get_db)]):
     """Delete a reward rule."""
     rule = db.query(RewardRule).filter(RewardRule.id == rule_id).first()
     if not rule:
@@ -70,7 +77,7 @@ def delete_rule(rule_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/seed-defaults", response_model=list[RewardRuleOut])
-def seed_default_rules(db: Session = Depends(get_db)):
+def seed_default_rules(db: Annotated[Session, Depends(get_db)]):
     """Create default reward rules (PRDのデフォルトテンプレート)."""
     defaults = [
         RewardRule(

@@ -1,16 +1,28 @@
 """SQLAlchemy models for Study to Activity."""
+
 import enum
-from datetime import datetime, date, time
+from datetime import datetime
 
 from sqlalchemy import (
-    Column, Integer, String, Text, Boolean, DateTime, Date, Time,
-    ForeignKey, Enum as SAEnum, JSON
+    JSON,
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+)
+from sqlalchemy import (
+    Enum as SAEnum,
 )
 from sqlalchemy.orm import relationship
+
 from backend.database import Base
 
-
 # --- Enums ---
+
 
 class UserRole(str, enum.Enum):
     PARENT = "parent"
@@ -18,18 +30,18 @@ class UserRole(str, enum.Enum):
 
 
 class TaskStatus(str, enum.Enum):
-    PENDING = "pending"        # 未着手
+    PENDING = "pending"  # 未着手
     IN_PROGRESS = "in_progress"  # 進行中
-    COMPLETED = "completed"    # 完了（承認待ち）
-    APPROVED = "approved"      # 親が承認済み
-    REJECTED = "rejected"      # 差し戻し
+    COMPLETED = "completed"  # 完了（承認待ち）
+    APPROVED = "approved"  # 親が承認済み
+    REJECTED = "rejected"  # 差し戻し
 
 
 class TriggerType(str, enum.Enum):
-    ALL_HOMEWORK_DONE = "all_homework_done"     # 当日の宿題すべて完了
-    STUDY_TIME_REACHED = "study_time_reached"   # 学習時間が条件を達成
-    TASK_COMPLETED = "task_completed"            # 特定タスク完了
-    STREAK = "streak"                            # 連続達成
+    ALL_HOMEWORK_DONE = "all_homework_done"  # 当日の宿題すべて完了
+    STUDY_TIME_REACHED = "study_time_reached"  # 学習時間が条件を達成
+    TASK_COMPLETED = "task_completed"  # 特定タスク完了
+    STREAK = "streak"  # 連続達成
 
 
 class ActivityType(str, enum.Enum):
@@ -39,6 +51,7 @@ class ActivityType(str, enum.Enum):
 
 
 # --- Models ---
+
 
 class User(Base):
     __tablename__ = "users"
@@ -61,10 +74,12 @@ class User(Base):
 
     def get_nintendo_token(self) -> str:
         from backend.security import decrypt_token
+
         return decrypt_token(self.nintendo_session_token)
 
     def set_nintendo_token(self, token: str):
         from backend.security import encrypt_token
+
         self.nintendo_session_token = encrypt_token(token)
 
 
@@ -79,7 +94,9 @@ class StudyPlan(Base):
 
     # Relationships
     child = relationship("User", back_populates="study_plans")
-    tasks = relationship("StudyTask", back_populates="plan", cascade="all, delete-orphan")
+    tasks = relationship(
+        "StudyTask", back_populates="plan", cascade="all, delete-orphan"
+    )
 
 
 class StudyTask(Base):
@@ -146,6 +163,7 @@ class ActivityLog(Base):
 
 class RewardLog(Base):
     """Tracks which rewards were already granted to avoid double-granting."""
+
     __tablename__ = "reward_logs"
 
     id = Column(Integer, primary_key=True, index=True)

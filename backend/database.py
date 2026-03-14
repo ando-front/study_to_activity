@@ -11,7 +11,9 @@ SQLAlchemy を使用してデータベース接続を構成する。
     def list_items(db: Session = Depends(get_db)):
         return db.query(Item).all()
 """
+
 import os
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
@@ -28,6 +30,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 class Base(DeclarativeBase):
     """全モデルの基底クラス。SQLAlchemy の宣言的マッピングに使用。"""
+
     pass
 
 
