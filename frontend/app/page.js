@@ -11,7 +11,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { authApi } from "./lib/api";
+import { authApi } from "@/app/lib/api";
 
 export default function Home() {
   const router = useRouter();

@@ -17,7 +17,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { walletApi, authApi } from "../../lib/api";
+import { walletApi, authApi } from "@/app/lib/api";
 
 export default function WalletPage() {
   const router = useRouter();

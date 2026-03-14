@@ -12,7 +12,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { tasksApi } from "../../lib/api";
+import { tasksApi } from "@/app/lib/api";
 
 export default function ChildDashboard() {
   const router = useRouter();

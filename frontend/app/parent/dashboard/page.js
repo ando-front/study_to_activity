@@ -13,7 +13,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { tasksApi, switchApi, authApi } from "../../lib/api";
+import { tasksApi, switchApi, authApi } from "@/app/lib/api";
 
 export default function ParentDashboard() {
   const router = useRouter();

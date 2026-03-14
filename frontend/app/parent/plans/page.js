@@ -15,7 +15,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { plansApi, authApi } from "../../lib/api";
+import { plansApi, authApi } from "@/app/lib/api";
 
 export default function PlansPage() {
   const router = useRouter();
