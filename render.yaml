@@ -16,7 +16,7 @@ services:
           name: s2a-db
           property: connectionString
       - key: ALLOWED_ORIGINS
-        value: https://s2a-frontend.vercel.app,http://localhost:3000
+        value: https://study-to-activity.vercel.app,http://localhost:3000
       - key: ALLOWED_ORIGIN_REGEX
         value: https://.*\.vercel\.app
       - key: ENCRYPTION_KEY
