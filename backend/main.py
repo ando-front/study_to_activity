@@ -13,6 +13,7 @@ from backend.routers import auth, plans, rules, switch, tasks, wallet
 
 # Create all tables
 Base.metadata.create_all(bind=engine)
+database.ensure_schema_compatibility()
 
 app = FastAPI(
     title="Study to Activity (S2A)",

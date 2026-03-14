@@ -59,7 +59,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False)
     role = Column(SAEnum(UserRole), nullable=False)
-    pin = Column(String(10), nullable=True)  # Simple PIN auth
+    pin = Column(String(255), nullable=True)  # Stores hashed PIN (bcrypt etc.)
     nintendo_session_token = Column(Text, nullable=True)  # Added for Switch integration
     created_at = Column(DateTime, default=datetime.utcnow)
 

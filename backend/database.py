@@ -14,7 +14,7 @@ SQLAlchemy を使用してデータベース接続を構成する。
 
 import os
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 # 環境変数からデータベースURLを取得。未設定の場合はローカル SQLite をフォールバックに使用
@@ -32,6 +32,21 @@ class Base(DeclarativeBase):
     """全モデルの基底クラス。SQLAlchemy の宣言的マッピングに使用。"""
 
     pass
+
+
+def ensure_schema_compatibility():
+    """Apply lightweight compatibility fixes for deployed databases.
+
+    This project currently doesn't use Alembic migrations, so we patch the
+    small number of production schema mismatches that can break runtime.
+    """
+    if "postgresql" not in DATABASE_URL:
+        return
+
+    with engine.begin() as connection:
+        connection.execute(
+            text("ALTER TABLE users ALTER COLUMN pin TYPE VARCHAR(255)")
+        )
 
 
 def get_db():
