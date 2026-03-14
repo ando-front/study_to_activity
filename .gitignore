@@ -109,6 +109,15 @@ venv.bak
 *.sln
 *.sw?
 
+# Node / Next.js
+node_modules/
+.next/
+out/
+build/
+.vercel
+*.tsbuildinfo
+next-env.d.ts
+
 # SQLite
 *.db
 *.db-journal
