@@ -13,7 +13,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { tasksApi, switchApi } from "../../lib/api";
+import { tasksApi, switchApi, authApi } from "../../lib/api";
 
 export default function ParentDashboard() {
   const router = useRouter();
@@ -95,6 +95,12 @@ export default function ParentDashboard() {
     try {
       if (!responseUrl) return;
       await switchApi.connect({ user_id: user.id, response_url: responseUrl });
+      
+      // ユーザー情報を再取得して state と localStorage を更新
+      const updatedUser = await authApi.getUser(user.id);
+      localStorage.setItem("s2a_user", JSON.stringify(updatedUser));
+      setUser(updatedUser);
+
       showToast("Nintendo Account と連携しました！🎮");
       setShowSwitchModal(false);
       fetchData();
