@@ -16,28 +16,13 @@ services:
           name: s2a-db
           property: connectionString
       - key: ALLOWED_ORIGINS
-        value: https://s2a-frontend.vercel.app  # Replace with actual Vercel URL later
+        value: https://s2a-frontend.vercel.app,http://localhost:3000
+      - key: ALLOWED_ORIGIN_REGEX
+        value: https://.*\.vercel\.app
       - key: ENCRYPTION_KEY
         generateValue: true
       - key: PYTHONPATH
         value: .
-    autoDeploy: true
-
-  # Frontend service (Next.js)
-  - type: web
-    name: s2a-frontend
-    env: node
-    plan: free
-    buildCommand: |
-      cd frontend
-      npm ci
-      npm run build
-    startCommand: |
-      cd frontend
-      npm run start
-    envVars:
-      - key: NODE_ENV
-        value: production
     autoDeploy: true
 
 databases:
