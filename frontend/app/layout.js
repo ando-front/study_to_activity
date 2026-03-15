@@ -4,10 +4,12 @@
  * Next.js App Router の最上位レイアウト。
  * - Google Fonts「Outfit」を読み込み、CSS カスタムプロパティとして適用
  * - 全ページ共通の <html lang="ja"> と SEO メタデータを設定
+ * - NextAuth SessionProvider で認証状態を全体に提供
  */
 
 import { Outfit } from "next/font/google";
 import "./globals.css";
+import SessionProviderWrapper from "@/components/SessionProviderWrapper";
 
 /**
  * Outfit フォント設定。
@@ -34,7 +36,9 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="ja">
-      <body className={outfit.variable}>{children}</body>
+      <body className={outfit.variable}>
+        <SessionProviderWrapper>{children}</SessionProviderWrapper>
+      </body>
     </html>
   );
 }

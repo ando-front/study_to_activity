@@ -15,10 +15,12 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 import { plansApi, authApi } from "@/lib/api";
 
 export default function PlansPage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
 
   // --- State ---
   const [user, setUser] = useState(null);
@@ -44,12 +46,18 @@ export default function PlansPage() {
 
   /** 認証ガード */
   useEffect(() => {
+    if (status === "loading") return;
+    if (status === "authenticated" && session?.user) {
+      setUser({ id: session.user.backendId, name: session.user.name, role: "parent" });
+      return;
+    }
     const stored = localStorage.getItem("s2a_user");
-    if (!stored) { router.push("/"); return; }
-    const u = JSON.parse(stored);
-    if (u.role !== "parent") { router.push("/"); return; }
-    setUser(u);
-  }, [router]);
+    if (stored) {
+      const u = JSON.parse(stored);
+      if (u.role === "parent") { setUser(u); return; }
+    }
+    router.push("/parent/login");
+  }, [status, session, router]);
 
   /**
    * 計画一覧と子供ユーザーを並行取得。
@@ -127,7 +135,7 @@ export default function PlansPage() {
             <a href="/parent/plans" className="active">計画</a>
             <a href="/parent/rules">ルール</a>
             <a href="/parent/wallet">ウォレット</a>
-            <a data-testid="logout-link" href="/" onClick={(e) => { e.preventDefault(); localStorage.removeItem("s2a_user"); router.push("/"); }}>ログアウト</a>
+            <a data-testid="logout-link" href="/" onClick={async (e) => { e.preventDefault(); localStorage.removeItem("s2a_user"); await signOut({ callbackUrl: "/" }); }}>ログアウト</a>
           </div>
         </div>
       </nav>

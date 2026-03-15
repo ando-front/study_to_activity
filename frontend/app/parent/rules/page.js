@@ -15,6 +15,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 import { rulesApi } from "@/lib/api";
 
 /** トリガータイプのコード → 日本語ラベルの対応表 */
@@ -27,8 +28,7 @@ const TRIGGER_LABELS = {
 
 export default function RulesPage() {
   const router = useRouter();
-
-  // --- State ---
+  const { data: session, status } = useSession();
   const [user, setUser] = useState(null);
   const [rules, setRules] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -45,12 +45,18 @@ export default function RulesPage() {
 
   /** 認証ガード */
   useEffect(() => {
+    if (status === "loading") return;
+    if (status === "authenticated" && session?.user) {
+      setUser({ id: session.user.backendId, name: session.user.name, role: "parent" });
+      return;
+    }
     const stored = localStorage.getItem("s2a_user");
-    if (!stored) { router.push("/"); return; }
-    const u = JSON.parse(stored);
-    if (u.role !== "parent") { router.push("/"); return; }
-    setUser(u);
-  }, [router]);
+    if (stored) {
+      const u = JSON.parse(stored);
+      if (u.role === "parent") { setUser(u); return; }
+    }
+    router.push("/parent/login");
+  }, [status, session, router]);
 
   /** ルール一覧を取得 */
   const fetchData = useCallback(async () => {
