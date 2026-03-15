@@ -9,14 +9,18 @@
  *
  * タスク承認時にはバックエンドの報酬エンジンが自動評価され、
  * 条件を満たした場合はウォレットへの時間付与が即座にフィードバックされる。
+ *
+ * 認証: NextAuth セッションを優先し、フォールバックとして localStorage を使用する。
  */
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 import { tasksApi, switchApi, authApi } from "@/lib/api";
 
 export default function ParentDashboard() {
   const router = useRouter();
+  const { data: session, status } = useSession();
 
   // --- State ---
   const [user, setUser] = useState(null);
@@ -29,14 +33,36 @@ export default function ParentDashboard() {
   const [responseUrl, setResponseUrl] = useState("");
   const [syncing, setSyncing] = useState(false);
 
-  /** 認証ガード: 親ロール以外はトップへリダイレクト */
+  /**
+   * 認証ガード: NextAuth セッションまたは localStorage でユーザーを確認する。
+   * どちらも存在しない場合はログインページへリダイレクトする。
+   */
   useEffect(() => {
+    if (status === "loading") return;
+
+    if (status === "authenticated" && session?.user) {
+      // NextAuth セッションからユーザー情報を設定
+      setUser({
+        id: session.user.backendId,
+        name: session.user.name,
+        role: "parent",
+        is_nintendo_linked: false,
+      });
+      return;
+    }
+
+    // フォールバック: localStorage を確認（PIN 認証後の場合）
     const stored = localStorage.getItem("s2a_user");
-    if (!stored) { router.push("/"); return; }
-    const u = JSON.parse(stored);
-    if (u.role !== "parent") { router.push("/"); return; }
-    setUser(u);
-  }, [router]);
+    if (stored) {
+      const u = JSON.parse(stored);
+      if (u.role === "parent") {
+        setUser(u);
+        return;
+      }
+    }
+
+    router.push("/parent/login");
+  }, [status, session, router]);
 
   /** 親ダッシュボードデータの一括取得 */
   const fetchData = useCallback(async () => {
@@ -134,7 +160,7 @@ export default function ParentDashboard() {
             <a href="/parent/plans">計画</a>
             <a href="/parent/rules">ルール</a>
             <a href="/parent/wallet">ウォレット</a>
-            <a data-testid="logout-link" href="/" onClick={(e) => { e.preventDefault(); localStorage.removeItem("s2a_user"); router.push("/"); }}>ログアウト</a>
+            <a data-testid="logout-link" href="/" onClick={async (e) => { e.preventDefault(); localStorage.removeItem("s2a_user"); await signOut({ callbackUrl: "/" }); }}>ログアウト</a>
           </div>
         </div>
       </nav>

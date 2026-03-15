@@ -17,10 +17,12 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 import { walletApi, authApi } from "@/lib/api";
 
 export default function WalletPage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
 
   // --- State ---
   const [user, setUser] = useState(null);
@@ -45,12 +47,18 @@ export default function WalletPage() {
 
   /** 認証ガード */
   useEffect(() => {
+    if (status === "loading") return;
+    if (status === "authenticated" && session?.user) {
+      setUser({ id: session.user.backendId, name: session.user.name, role: "parent" });
+      return;
+    }
     const stored = localStorage.getItem("s2a_user");
-    if (!stored) { router.push("/"); return; }
-    const u = JSON.parse(stored);
-    if (u.role !== "parent") { router.push("/"); return; }
-    setUser(u);
-  }, [router]);
+    if (stored) {
+      const u = JSON.parse(stored);
+      if (u.role === "parent") { setUser(u); return; }
+    }
+    router.push("/parent/login");
+  }, [status, session, router]);
 
   /** 子供ユーザー一覧を取得し、最初の子供をデフォルト選択にする */
   useEffect(() => {

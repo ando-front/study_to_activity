@@ -37,13 +37,14 @@ export default function Home() {
 
   /**
    * ユーザーカードをタップしたときの処理。
-   * localStorage に選択ユーザーを保存し、ロールに応じたダッシュボードへ遷移する。
+   * - 親ユーザーは OAuth ログインページへ遷移する
+   * - 子供ユーザーは localStorage に選択ユーザーを保存してダッシュボードへ遷移する
    */
   const handleSelect = (user) => {
-    localStorage.setItem("s2a_user", JSON.stringify(user));
     if (user.role === "parent") {
-      router.push("/parent/dashboard");
+      router.push("/parent/login");
     } else {
+      localStorage.setItem("s2a_user", JSON.stringify(user));
       router.push("/child/dashboard");
     }
   };
