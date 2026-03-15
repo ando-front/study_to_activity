@@ -570,3 +570,70 @@ select.form-input {
     font-size: 0.8rem;
   }
 }
+
+/* ===== Manual Page Markdown Styles ===== */
+.manual-content h1,
+.manual-content h2,
+.manual-content h3,
+.manual-content h4 {
+  color: var(--text);
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.manual-content h1 { font-size: 1.8rem; border-bottom: 2px solid var(--primary); padding-bottom: 8px; }
+.manual-content h2 { font-size: 1.4rem; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+.manual-content h3 { font-size: 1.15rem; }
+.manual-content p { margin-bottom: 1rem; color: var(--text-secondary); }
+.manual-content ul,
+.manual-content ol { margin-bottom: 1rem; padding-left: 1.5rem; color: var(--text-secondary); }
+.manual-content li { margin-bottom: 0.4rem; }
+.manual-content blockquote {
+  border-left: 4px solid var(--primary);
+  padding: 8px 16px;
+  background: var(--card-bg);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  margin-bottom: 1rem;
+  color: var(--text-muted);
+}
+.manual-content code {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.88em;
+  font-family: monospace;
+}
+.manual-content pre {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  overflow-x: auto;
+  margin-bottom: 1rem;
+}
+.manual-content pre code { border: none; padding: 0; background: none; }
+.manual-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+.manual-content th,
+.manual-content td {
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  text-align: left;
+}
+.manual-content th {
+  background: var(--card-bg);
+  font-weight: 600;
+  color: var(--text);
+}
+.manual-content a { color: var(--primary); }
+.manual-content hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2rem 0;
+}

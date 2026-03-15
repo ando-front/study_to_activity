@@ -4,8 +4,10 @@
  * Next.js App Router の最上位レイアウト。
  * - Google Fonts「Outfit」を読み込み、CSS カスタムプロパティとして適用
  * - 全ページ共通の <html lang="ja"> と SEO メタデータを設定
+ * - 全ページ右下にマニュアルへのフローティングリンクを表示
  */
 
+import Link from "next/link";
 import { Outfit } from "next/font/google";
 import "./globals.css";
 
@@ -34,7 +36,33 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="ja">
-      <body className={outfit.variable}>{children}</body>
+      <body className={outfit.variable}>
+        {children}
+        {/* マニュアルへのフローティングリンク（全ページ共通） */}
+        <Link
+          href="/manual"
+          style={{
+            position: "fixed",
+            bottom: 16,
+            right: 16,
+            zIndex: 9999,
+            background: "var(--primary)",
+            color: "#fff",
+            textDecoration: "none",
+            padding: "8px 14px",
+            borderRadius: 9999,
+            fontSize: "0.82rem",
+            fontWeight: 600,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+          aria-label="ユーザーマニュアルを開く"
+        >
+          📖 マニュアル
+        </Link>
+      </body>
     </html>
   );
 }
