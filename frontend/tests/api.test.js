@@ -1,7 +1,7 @@
 /**
  * @jest-environment jsdom
  */
-import { authApi, tasksApi } from '../app/lib/api';
+import { authApi, tasksApi } from '../lib/api';
 
 // global.fetch をモックする
 global.fetch = jest.fn();
