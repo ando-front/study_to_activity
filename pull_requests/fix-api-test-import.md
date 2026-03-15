@@ -1,0 +1,1 @@
+This pull request fixes the failing tests by correcting the import path for the API module in `frontend/tests/api.test.js`.
