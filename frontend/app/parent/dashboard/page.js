@@ -122,7 +122,7 @@ export default function ParentDashboard() {
   const completeSwitchConnect = async () => {
     try {
       if (!responseUrl) return;
-      await switchApi.connect({ user_id: user.id, response_url: responseUrl, verifier: switchVerifier });
+      await switchApi.connect({ user_id: user.id, response_url: responseUrl.trim(), verifier: switchVerifier });
       
       // ユーザー情報を再取得して state と localStorage を更新
       const updatedUser = await authApi.getUser(user.id);
@@ -255,7 +255,7 @@ export default function ParentDashboard() {
             <div className="empty-state" style={{ padding: 20 }}>
               <span className="emoji" style={{ fontSize: "2rem" }}>📝</span>
               <p>今日の計画はまだありません</p>
-              <a href="/parent/plans" className="btn btn-primary btn-sm" style={{ marginTop: 8 }}>計画を作成</a>
+              <a href="/parent/plans" className="btn btn-primary btn-sm" style={{ marginTop: 8 }}>計画を確認</a>
             </div>
           ) : (
             dash.today_plans.map((p) => (
@@ -298,7 +298,7 @@ export default function ParentDashboard() {
           <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 500 }}>
             <h2>Nintendo Account 連携</h2>
             <p style={{ fontSize: "0.9rem", color: "var(--text-secondary)", marginBottom: 16 }}>
-              1. 開いた任天堂サイトでログインします。<br/>
+              1. 開いた任天堂サイトでログインします。タブが開かなかった場合は<a href={switchUrl} target="_blank" rel="noreferrer" style={{ color: "var(--primary)", textDecoration: "underline" }}>こちらをクリック</a>してください。<br/>
               2. ログイン後、「この人を選択」ボタンを<b>右クリックしてリンクをコピー</b>してください。<br/>
               3. コピーしたリンクを下の欄に貼り付けてください。
             </p>

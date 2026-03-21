@@ -12,7 +12,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { tasksApi } from "@/lib/api";
+import { tasksApi, plansApi } from "@/lib/api";
 
 export default function ChildDashboard() {
   const router = useRouter();
@@ -22,6 +22,10 @@ export default function ChildDashboard() {
   const [dash, setDash] = useState(null);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [planDate, setPlanDate] = useState(new Date().toISOString().split("T")[0]);
+  const [title, setTitle] = useState("");
+  const [tasksForm, setTasksForm] = useState([{ subject: "", estimated_minutes: 30, is_homework: false, description: "" }]);
 
   /**
    * 認証チェック: localStorage にユーザー情報がなければトップへリダイレクト。
@@ -55,6 +59,30 @@ export default function ChildDashboard() {
    * @param {string} msg - 表示するメッセージ
    * @param {"success"|"error"} type - トーストのスタイル
    */
+  const addTaskField = () => setTasksForm([...tasksForm, { subject: "", estimated_minutes: 30, is_homework: false, description: "" }]);
+
+  const updateTaskField = (i, field, val) => {
+    const copy = [...tasksForm]; copy[i] = { ...copy[i], [field]: val }; setTasksForm(copy);
+  };
+
+  const removeTaskField = (i) => { if (tasksForm.length > 1) setTasksForm(tasksForm.filter((_, idx) => idx !== i)); };
+
+  const handleCreatePlan = async (e) => {
+    e.preventDefault();
+    try {
+      await plansApi.create({
+        child_id: user.id,
+        plan_date: planDate,
+        title,
+        tasks: tasksForm.filter((t) => t.subject.trim()),
+      });
+      showToast("学習計画を作成しました！📚");
+      setShowModal(false);
+      setTitle(""); setTasksForm([{ subject: "", estimated_minutes: 30, is_homework: false, description: "" }]);
+      fetchData();
+    } catch (err) { showToast(err.message, "error"); }
+  };
+
   const showToast = (msg, type = "success") => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
@@ -159,7 +187,7 @@ export default function ChildDashboard() {
           <div className="empty-state">
             <span className="emoji">📝</span>
             <p>今日のタスクはまだありません。</p>
-            <p style={{ fontSize: "0.85rem", marginTop: 4 }}>親に学習計画を作成してもらおう！</p>
+            <button className="btn btn-primary" style={{ marginTop: 12 }} onClick={() => setShowModal(true)}>学習計画を作成する</button>
           </div>
         ) : (
           <div>
@@ -206,6 +234,61 @@ export default function ChildDashboard() {
 
       {/* ===== トースト通知 ===== */}
       {toast && <div className={`toast toast-${toast.type}`}>{toast.msg}</div>}
+
+      {/* ===== 計画作成モーダル ===== */}
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 560, maxHeight: "85vh", overflowY: "auto" }}>
+            <h2>📚 学習計画を作成</h2>
+            <form onSubmit={handleCreatePlan}>
+              <div className="grid-2">
+                <div className="form-group">
+                  <label>日付</label>
+                  <input type="date" className="form-input" value={planDate} onChange={(e) => setPlanDate(e.target.value)} required />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>計画タイトル</label>
+                <input className="form-input" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="例: 月曜日の学習" required />
+              </div>
+
+              <div style={{ marginTop: 16 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                  <label style={{ fontWeight: 600 }}>タスク</label>
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={addTaskField}>＋ 追加</button>
+                </div>
+                {tasksForm.map((t, i) => (
+                  <div key={i} style={{ padding: 12, border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", marginBottom: 8 }}>
+                    <div className="grid-2">
+                      <div className="form-group">
+                        <label>教科</label>
+                        <input className="form-input" value={t.subject} onChange={(e) => updateTaskField(i, "subject", e.target.value)} placeholder="例: 算数" />
+                      </div>
+                      <div className="form-group">
+                        <label>時間（分）</label>
+                        <input type="number" className="form-input" value={t.estimated_minutes} onChange={(e) => updateTaskField(i, "estimated_minutes", Number(e.target.value))} />
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.85rem" }}>
+                        <input type="checkbox" checked={t.is_homework} onChange={(e) => updateTaskField(i, "is_homework", e.target.checked)} /> 宿題
+                      </label>
+                      {tasksForm.length > 1 && (
+                        <button type="button" style={{ fontSize: "0.8rem", color: "var(--accent-red)", background: "none", border: "none", cursor: "pointer" }} onClick={() => removeTaskField(i)}>削除</button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
+                <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>作成</button>
+                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>キャンセル</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 }

@@ -1,16 +1,10 @@
-/**
- * @fileoverview 親ダッシュボード ログインページ
- *
- * 親ユーザー向けのログイン画面。Google OAuth または PIN 認証を選択できる。
- * NextAuth.js を使用して認証フローを開始する。
- */
 "use client";
 import { useState, useEffect } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { authApi } from "@/lib/api";
 
-export default function ParentLogin() {
+export default function ParentLoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session, status } = useSession();
@@ -44,7 +38,6 @@ export default function ParentLogin() {
     if (err) setError("ログインに失敗しました。もう一度お試しください。");
   }, [searchParams]);
 
-  /** Google OAuth でログイン */
   const handleGoogleLogin = async () => {
     setSigningIn(true);
     setError("");
@@ -56,7 +49,6 @@ export default function ParentLogin() {
     }
   };
 
-  /** PIN 認証でログイン */
   const handlePinLogin = async (e) => {
     e.preventDefault();
     if (!selectedUser) return;
@@ -81,11 +73,7 @@ export default function ParentLogin() {
   };
 
   if (status === "loading" || status === "authenticated") {
-    return (
-      <div style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ color: "var(--text-muted)" }}>読み込み中...</div>
-      </div>
-    );
+    return null; // Layout fallback will show
   }
 
   return (
@@ -93,7 +81,7 @@ export default function ParentLogin() {
       <div style={{ maxWidth: 440, width: "100%" }} className="animate-in">
         {/* ヘッダー */}
         <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <div style={{ fontSize: "3rem", marginBottom: 8 }}>👨‍👩‍👧</div>
+          <div style={{ fontSize: "3rem", marginBottom: 8 }}>👨👩👧</div>
           <h1 style={{
             fontSize: "1.8rem", fontWeight: 800,
             background: "linear-gradient(135deg, var(--primary), var(--secondary))",
