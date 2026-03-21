@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Study plans router - CRUD for daily/weekly study plans."""
 
 from datetime import date

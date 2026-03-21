@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Tasks router - manage study task lifecycle (start, complete, approve)."""
 
 from datetime import UTC, date, datetime
