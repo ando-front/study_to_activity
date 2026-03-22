@@ -11,6 +11,9 @@ import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 
 const API_BASE = (
+  (process.env.BACKEND_URL
+    ? process.env.BACKEND_URL.replace(/\/$/, "") + "/api"
+    : null) ||
   process.env.NEXT_PUBLIC_API_URL ||
   (process.env.NODE_ENV === "production"
     ? "https://s2a-backend.onrender.com/api"

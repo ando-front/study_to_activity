@@ -3,6 +3,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from backend.database import get_db
@@ -16,14 +17,26 @@ router = APIRouter()
 @router.post("/register", response_model=UserOut)
 def register_user(data: UserCreate, db: Annotated[Session, Depends(get_db)]):
     """Register a new parent or child user."""
+    # Normalize empty / whitespace-only email to None to avoid unique constraint issues
+    email = data.email.strip() if data.email else None
+    email = email or None
+
     user = User(
         name=data.name,
         role=UserRole(data.role),
         pin=hash_pin(data.pin),
-        email=data.email,
+        email=email,
     )
     db.add(user)
-    db.flush()
+
+    try:
+        db.flush()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail="このメールアドレスは既に登録されています",
+        )
 
     # Auto-create wallet for child users
     if user.role == UserRole.CHILD:

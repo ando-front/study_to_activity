@@ -24,7 +24,7 @@ describe('API Client Tests', () => {
     const result = await authApi.login({ user_id: 1, pin: '1234' });
 
     expect(fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/api/auth/login'),
+      expect.stringContaining('/auth/login'),
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({ user_id: 1, pin: '1234' }),
@@ -51,7 +51,7 @@ describe('API Client Tests', () => {
     await tasksApi.complete(10);
 
     expect(fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/api/tasks/10/complete'),
+      expect.stringContaining('/tasks/10/complete'),
       expect.objectContaining({ method: 'POST' })
     );
   });
