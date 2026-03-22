@@ -5,27 +5,53 @@
  * 各ドメイン（認証、計画、タスク、ルール、ウォレット）ごとに
  * オブジェクトとしてエクスポートし、呼び出し側でのインポートを明確にする。
  *
+ * ブラウザからのリクエストは Next.js の rewrites を通じて同一オリジンの
+ * プロキシ経由で送信され、CORS の問題を回避する。
+ *
  * 使用例:
  *   import { authApi, plansApi } from "./lib/api";
  *   const users = await authApi.listUsers();
  */
 
-/** バックエンド API のベース URL（環境変数で上書き可能） */
-const DEFAULT_API_BASE =
-  typeof window !== "undefined" &&
-  !["localhost", "127.0.0.1"].includes(window.location.hostname)
-    ? "https://s2a-backend.onrender.com/api"
-    : "http://localhost:8000/api";
+/**
+ * API のベースパス。
+ * - ブラウザ: Next.js rewrites でプロキシされる "/api/proxy" を使用（CORS 回避）
+ * - サーバー: 環境変数またはデフォルトのバックエンド URL に直接接続
+ */
+const API_BASE =
+  typeof window !== "undefined"
+    ? "/api/proxy"
+    : (
+        (process.env.BACKEND_URL
+          ? process.env.BACKEND_URL.replace(/\/$/, "") + "/api"
+          : null) ||
+        process.env.NEXT_PUBLIC_API_URL ||
+        "http://localhost:8000/api"
+      ).replace(/\/$/, "");
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || DEFAULT_API_BASE).replace(
-  /\/$/,
-  ""
-);
+/** ネットワークエラー時の最大リトライ回数 */
+const MAX_RETRIES = 2;
+
+/** リトライ間の基本待機時間（ミリ秒） */
+const RETRY_DELAY_MS = 1000;
+
+/**
+ * ネットワークレベルのエラー（Load failed / Failed to fetch）かどうかを判定する。
+ * @param {Error} err
+ * @returns {boolean}
+ */
+function isNetworkError(err) {
+  return (
+    err instanceof TypeError &&
+    /load failed|failed to fetch|network/i.test(err.message)
+  );
+}
 
 /**
  * 共通の HTTP リクエスト関数。
  * - レスポンスが非 2xx の場合、サーバーのエラーメッセージを含む Error をスローする。
  * - Content-Type は JSON をデフォルトとする。
+ * - ネットワークエラー時は自動リトライを行う。
  *
  * @param {string} path - API_BASE からの相対パス（例: "/auth/users"）
  * @param {RequestInit} options - fetch に渡すオプション
@@ -33,17 +59,39 @@ const API_BASE = (process.env.NEXT_PUBLIC_API_URL || DEFAULT_API_BASE).replace(
  * @throws {Error} API がエラーレスポンスを返した場合
  */
 async function request(path, options = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const url = `${API_BASE}${path}`;
+  const fetchOptions = {
     headers: { "Content-Type": "application/json", ...options.headers },
     ...options,
-  });
+  };
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new Error(err.detail || "API Error");
+  let lastError;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const res = await fetch(url, fetchOptions);
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: res.statusText }));
+        throw new Error(err.detail || "API Error");
+      }
+
+      return res.json();
+    } catch (err) {
+      lastError = err;
+
+      // Only retry on network-level errors (not HTTP errors)
+      if (!isNetworkError(err) || attempt >= MAX_RETRIES) {
+        throw err;
+      }
+
+      // Exponential backoff before retrying
+      await new Promise((resolve) =>
+        setTimeout(resolve, RETRY_DELAY_MS * 2 ** attempt)
+      );
+    }
   }
 
-  return res.json();
+  throw lastError;
 }
 
 // ---------------------------------------------------------------------------

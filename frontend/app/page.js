@@ -67,7 +67,11 @@ export default function Home() {
       setRegisterPin("");
       setRegisterEmail("");
     } catch (err) {
-      alert(err.message);
+      if (err instanceof TypeError && /load failed|failed to fetch|network/i.test(err.message)) {
+        alert("サーバーに接続できません。しばらく待ってからもう一度お試しください。");
+      } else {
+        alert(err.message);
+      }
     }
   };
 
