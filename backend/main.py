@@ -32,7 +32,14 @@ origins = [
     ).split(",")
     if origin.strip()
 ]
-origin_regex = os.getenv("ALLOWED_ORIGIN_REGEX")
+# In production (PostgreSQL), default to allowing all HTTPS origins so the
+# deployed frontend (e.g. Vercel / Render) can reach the backend without
+# requiring ALLOWED_ORIGIN_REGEX to be explicitly set.
+# For tighter security, set ALLOWED_ORIGIN_REGEX to a specific pattern
+# (e.g. "https://(app\.yourdomain\.com)") in the production environment.
+_db_url = os.getenv("DATABASE_URL", "")
+_default_origin_regex = "https://[^/]+" if "postgresql" in _db_url else None
+origin_regex = os.getenv("ALLOWED_ORIGIN_REGEX", _default_origin_regex)
 
 app.add_middleware(
     CORSMiddleware,

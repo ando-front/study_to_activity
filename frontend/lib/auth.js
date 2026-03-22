@@ -10,9 +10,12 @@ import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL
-  ? process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "")
-  : "http://localhost:8000/api";
+const API_BASE = (
+  process.env.NEXT_PUBLIC_API_URL ||
+  (process.env.NODE_ENV === "production"
+    ? "https://s2a-backend.onrender.com/api"
+    : "http://localhost:8000/api")
+).replace(/\/$/, "");
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
