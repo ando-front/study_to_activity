@@ -41,12 +41,16 @@ export default function ParentDashboard() {
     if (status === "loading") return;
 
     if (status === "authenticated" && session?.user) {
-      // NextAuth セッションからユーザー情報を設定
-      setUser({
-        id: session.user.backendId,
-        name: session.user.name,
-        role: "parent",
-        is_nintendo_linked: false,
+      // NextAuth セッションからユーザー情報を取得
+      authApi.getUser(session.user.backendId).then(u => {
+        setUser(u);
+      }).catch(() => {
+        setUser({
+          id: session.user.backendId,
+          name: session.user.name,
+          role: "parent",
+          is_nintendo_linked: false,
+        });
       });
       return;
     }
