@@ -26,7 +26,7 @@ const API_BASE =
           ? process.env.BACKEND_URL.replace(/\/$/, "") + "/api"
           : null) ||
         process.env.NEXT_PUBLIC_API_URL ||
-        "http://localhost:8000/api"
+        "https://s2a-backend.onrender.com/api"
       ).replace(/\/$/, "");
 
 /** ネットワークエラー時の最大リトライ回数 */
@@ -60,9 +60,10 @@ export function isNetworkError(err) {
  */
 async function request(path, options = {}) {
   const url = `${API_BASE}${path}`;
+  const { headers: optHeaders, ...rest } = options;
   const fetchOptions = {
-    headers: { "Content-Type": "application/json", ...options.headers },
-    ...options,
+    headers: { "Content-Type": "application/json", ...optHeaders },
+    ...rest,
   };
 
   let lastError;

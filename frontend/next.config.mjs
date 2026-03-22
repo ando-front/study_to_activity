@@ -3,8 +3,12 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   async rewrites() {
+    // BACKEND_URL を優先。未設定の場合、Vercel 上なら本番 Render URL をフォールバック。
     const backendUrl = (
-      process.env.BACKEND_URL || "http://localhost:8000"
+      process.env.BACKEND_URL ||
+      (process.env.VERCEL
+        ? "https://s2a-backend.onrender.com"
+        : "http://localhost:8000")
     ).replace(/\/$/, "");
     return [
       {
