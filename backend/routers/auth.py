@@ -17,8 +17,9 @@ router = APIRouter()
 @router.post("/register", response_model=UserOut)
 def register_user(data: UserCreate, db: Annotated[Session, Depends(get_db)]):
     """Register a new parent or child user."""
-    # Normalize empty email to None to avoid unique constraint issues
-    email = data.email if data.email else None
+    # Normalize empty / whitespace-only email to None to avoid unique constraint issues
+    email = data.email.strip() if data.email else None
+    email = email or None
 
     user = User(
         name=data.name,

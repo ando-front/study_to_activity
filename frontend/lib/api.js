@@ -40,7 +40,7 @@ const RETRY_DELAY_MS = 1000;
  * @param {Error} err
  * @returns {boolean}
  */
-function isNetworkError(err) {
+export function isNetworkError(err) {
   return (
     err instanceof TypeError &&
     /load failed|failed to fetch|network/i.test(err.message)

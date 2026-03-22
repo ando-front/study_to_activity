@@ -11,7 +11,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { authApi } from "@/lib/api";
+import { authApi, isNetworkError } from "@/lib/api";
 
 export default function Home() {
   const router = useRouter();
@@ -67,7 +67,7 @@ export default function Home() {
       setRegisterPin("");
       setRegisterEmail("");
     } catch (err) {
-      if (err instanceof TypeError && /load failed|failed to fetch|network/i.test(err.message)) {
+      if (isNetworkError(err)) {
         alert("サーバーに接続できません。しばらく待ってからもう一度お試しください。");
       } else {
         alert(err.message);
