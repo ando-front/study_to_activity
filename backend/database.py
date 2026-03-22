@@ -12,10 +12,14 @@ SQLAlchemy を使用してデータベース接続を構成する。
         return db.query(Item).all()
 """
 
+import logging
 import os
 
 from sqlalchemy import create_engine, text
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
+
+logger = logging.getLogger(__name__)
 
 # 環境変数からデータベースURLを取得。未設定の場合はローカル SQLite をフォールバックに使用
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./s2a.db")
@@ -43,10 +47,15 @@ def ensure_schema_compatibility():
     if "postgresql" not in DATABASE_URL:
         return
 
-    with engine.begin() as connection:
-        connection.execute(
-            text("ALTER TABLE users ALTER COLUMN pin TYPE VARCHAR(255)")
-        )
+    try:
+        with engine.begin() as connection:
+            connection.execute(
+                text("ALTER TABLE users ALTER COLUMN pin TYPE VARCHAR(255)")
+            )
+    except SQLAlchemyError as exc:
+        # Column type is already compatible, or a non-fatal DB error occurred.
+        # Log and continue rather than crashing the application on startup.
+        logger.warning("ensure_schema_compatibility: skipped – %s", exc)
 
 
 def get_db():
