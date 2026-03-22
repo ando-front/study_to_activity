@@ -25,6 +25,7 @@ export default function Home() {
   const [registerName, setRegisterName] = useState("");
   const [registerRole, setRegisterRole] = useState("child");
   const [registerPin, setRegisterPin] = useState("");
+  const [registerEmail, setRegisterEmail] = useState("");
 
   /** 初回マウント時に登録済みユーザーを取得 */
   useEffect(() => {
@@ -58,11 +59,13 @@ export default function Home() {
     try {
       const data = { name: registerName, role: registerRole };
       if (registerPin) data.pin = registerPin;
+      if (registerEmail) data.email = registerEmail;
       const user = await authApi.register(data);
       setUsers((prev) => [...prev, user]);
       setShowRegister(false);
       setRegisterName("");
       setRegisterPin("");
+      setRegisterEmail("");
     } catch (err) {
       alert(err.message);
     }
@@ -175,7 +178,7 @@ export default function Home() {
 
         {/* ===== ユーザー登録モーダル ===== */}
         {showRegister && (
-          <div className="modal-overlay" onClick={() => setShowRegister(false)}>
+          <div className="modal-overlay" onClick={() => { setShowRegister(false); setRegisterEmail(""); }}>
             <div className="modal" onClick={(e) => e.stopPropagation()}>
               <h2>ユーザー登録</h2>
               <form onSubmit={handleRegister}>
@@ -197,9 +200,16 @@ export default function Home() {
                   <input className="form-input" type="password" value={registerPin}
                     onChange={(e) => setRegisterPin(e.target.value)} placeholder="4桁のPIN" maxLength={4} />
                 </div>
+                {registerRole === "parent" && (
+                  <div className="form-group">
+                    <label htmlFor="registerEmail">メールアドレス（Google ログイン用・任意）</label>
+                    <input id="registerEmail" className="form-input" type="email" value={registerEmail}
+                      onChange={(e) => setRegisterEmail(e.target.value)} placeholder="例: parent@example.com" />
+                  </div>
+                )}
                 <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
                   <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>登録</button>
-                  <button type="button" className="btn btn-secondary" onClick={() => setShowRegister(false)}>キャンセル</button>
+                  <button type="button" className="btn btn-secondary" onClick={() => { setShowRegister(false); setRegisterEmail(""); }}>キャンセル</button>
                 </div>
               </form>
             </div>
