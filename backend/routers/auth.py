@@ -36,7 +36,7 @@ def register_user(data: UserCreate, db: Annotated[Session, Depends(get_db)]):
         raise HTTPException(
             status_code=409,
             detail="このメールアドレスは既に登録されています",
-        )
+        ) from None
 
     # Auto-create wallet for child users
     if user.role == UserRole.CHILD:

@@ -24,9 +24,14 @@ module.exports = defineConfig({
       url: 'http://localhost:3000',
       reuseExistingServer: !process.env.CI,
       timeout: 120 * 1000,
+      env: {
+        AUTH_SECRET: process.env.AUTH_SECRET || 's2a-e2e-test-secret',
+        NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || 's2a-e2e-test-secret',
+        NEXTAUTH_URL: 'http://localhost:3000',
+      },
     },
     {
-      command: '../backend/venv/bin/python ../backend/main.py',
+      command: 'python ../backend/main.py',
       url: 'http://localhost:8000/api/health',
       reuseExistingServer: !process.env.CI,
       timeout: 120 * 1000,

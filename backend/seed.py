@@ -1,6 +1,7 @@
 from backend.database import Base, SessionLocal, engine
 from backend.models import ActivityWallet, User, UserRole
 from backend.routers.rules import seed_default_rules
+from backend.security import hash_pin
 
 
 def seed():
@@ -15,11 +16,11 @@ def seed():
             return
 
         # 1. Create Parent
-        parent = User(name="お父さん", role=UserRole.PARENT, pin="1234")
+        parent = User(name="お父さん", role=UserRole.PARENT, pin=hash_pin("1234"))
         db.add(parent)
 
         # 2. Create Child
-        child = User(name="たろう", role=UserRole.CHILD, pin="0000")
+        child = User(name="たろう", role=UserRole.CHILD, pin=hash_pin("0000"))
         db.add(child)
         db.flush()  # Get IDs
 
