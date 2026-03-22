@@ -180,7 +180,12 @@ class ChildDashboard(BaseModel):
 
 
 class WeeklySchedule(BaseModel):
-    """Weekly view: plans grouped by day-of-week label (月〜日)."""
+    """Weekly view: plans grouped by day-of-week label (月〜日).
+
+    ``days`` keys are the 7 Japanese weekday labels in order:
+    "月", "火", "水", "木", "金", "土", "日" (Mon–Sun).
+    Each value is a (possibly empty) list of plans for that day.
+    """
     week_start: date
     week_end: date
     days: dict[str, list[StudyPlanOut]]

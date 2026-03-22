@@ -27,9 +27,16 @@ function toDateStr(d) {
   return d.toISOString().split("T")[0];
 }
 
-/** 週の月曜日を求める */
+/**
+ * 週の月曜日を返す。
+ * Week boundary: 月曜〜日曜（ISO 8601 週）。
+ *   getDay() returns 0=日, 1=月, ..., 6=土
+ *   日曜は「現在の週の最終日（7日目）」として扱う。
+ *   例: 日曜 3/22 → 月曜 3/16 を週の開始日として返す。
+ */
 function getMondayOf(d) {
   const day = new Date(d);
+  // Sunday (0) → go back 6 days to reach the Monday of this Mon–Sun week
   const diff = day.getDay() === 0 ? -6 : 1 - day.getDay();
   day.setDate(day.getDate() + diff);
   return day;
@@ -137,12 +144,13 @@ export default function SchedulePage() {
   const formatWeekRange = () =>
     `${weekStart.getFullYear()}年 ${weekStart.getMonth() + 1}月${weekStart.getDate()}日 〜 ${weekEndDate.getMonth() + 1}月${weekEndDate.getDate()}日`;
 
-  // 今日の曜日ラベル
+  // 今日の曜日ラベル（週内にある場合だけハイライトする）
+  // getDay(): 0=日, 1=月, ..., 6=土 → 月(0)〜日(6) のインデックスに変換
   const todayDayLabel = (() => {
     const today = new Date();
-    const isSameWeek =
-      today >= weekStart && today <= weekEndDate;
+    const isSameWeek = today >= weekStart && today <= weekEndDate;
     if (!isSameWeek) return null;
+    // Sunday (getDay=0) → index 6 ("日"), Monday (1) → 0 ("月"), …
     const idx = today.getDay() === 0 ? 6 : today.getDay() - 1;
     return DAY_LABELS[idx];
   })();
