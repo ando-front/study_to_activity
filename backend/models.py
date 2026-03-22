@@ -58,6 +58,7 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False)
+    email = Column(String(255), nullable=True, unique=True, index=True)  # For Google OAuth
     role = Column(SAEnum(UserRole), nullable=False)
     pin = Column(String(255), nullable=True)  # Stores hashed PIN (bcrypt etc.)
     nintendo_session_token = Column(Text, nullable=True)  # Added for Switch integration

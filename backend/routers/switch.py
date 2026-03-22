@@ -12,19 +12,20 @@ from backend.schemas import (
     SwitchDeviceOut,
     SwitchSyncResponse,
 )
+from backend.security import require_api_key
 from backend.switch_service import switch_service
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-@router.get("/auth-url", response_model=SwitchAuthUrl)
+@router.get("/auth-url", response_model=SwitchAuthUrl, dependencies=[Depends(require_api_key)])
 async def get_switch_auth_url():
     """Get the URL to start Nintendo Account authentication."""
     return await switch_service.get_auth_url()
 
 
-@router.post("/connect", response_model=dict)
+@router.post("/connect", response_model=dict, dependencies=[Depends(require_api_key)])
 async def connect_switch(
     data: SwitchConnectRequest, db: Annotated[Session, Depends(get_db)]
 ):
@@ -47,7 +48,7 @@ async def connect_switch(
         ) from e
 
 
-@router.get("/devices/{user_id}", response_model=list[SwitchDeviceOut])
+@router.get("/devices/{user_id}", response_model=list[SwitchDeviceOut], dependencies=[Depends(require_api_key)])
 async def list_switch_devices(
     user_id: int, db: Annotated[Session, Depends(get_db)]
 ):
@@ -69,7 +70,7 @@ async def list_switch_devices(
         ) from e
 
 
-@router.post("/sync/{user_id}", response_model=SwitchSyncResponse)
+@router.post("/sync/{user_id}", response_model=SwitchSyncResponse, dependencies=[Depends(require_api_key)])
 async def sync_balance_to_switch(
     user_id: int, db: Annotated[Session, Depends(get_db)]
 ):

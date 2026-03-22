@@ -1,6 +1,9 @@
 import os
+import secrets
 
 from cryptography.fernet import Fernet
+from fastapi import HTTPException, Security
+from fastapi.security import APIKeyHeader
 from passlib.context import CryptContext
 
 # --- PIN Hashing (bcrypt) ---
@@ -44,3 +47,21 @@ def decrypt_token(encrypted_token: str) -> str:
     if not encrypted_token:
         return None
     return fernet.decrypt(encrypted_token.encode()).decode()
+
+
+# --- API Key Authentication ---
+# Used to protect sensitive endpoints (e.g. Switch integration) from unauthorized callers.
+# Set BACKEND_API_KEY in production. In development the key is optional (skipped if unset).
+BACKEND_API_KEY = os.getenv("BACKEND_API_KEY")
+
+_api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+
+def require_api_key(api_key: str = Security(_api_key_header)) -> str:
+    """FastAPI dependency: enforce X-API-Key header when BACKEND_API_KEY is configured."""
+    if not BACKEND_API_KEY:
+        # Dev mode: no key configured, allow all requests
+        return api_key or ""
+    if not api_key or not secrets.compare_digest(api_key, BACKEND_API_KEY):
+        raise HTTPException(status_code=401, detail="Invalid or missing API key")
+    return api_key

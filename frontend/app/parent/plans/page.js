@@ -5,9 +5,10 @@
  *
  * 計画作成フロー:
  *   1. モーダルを開く
- *   2. 対象の子供・日付・タイトルを入力
- *   3. タスク（教科・見積時間・宿題フラグ）を動的に追加
- *   4. サブミットで計画 + タスクを一括作成
+ *   2. テンプレートを選択するか、手動で入力
+ *   3. 対象の子供・日付・タイトルを入力
+ *   4. タスク（教科・見積時間・宿題フラグ）を動的に追加
+ *   5. サブミットで計画 + タスクを一括作成
  *
  * タスクはバックエンド側でカスケード削除されるため、
  * 計画削除時にタスクの個別削除は不要。
@@ -17,6 +18,52 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { plansApi, authApi } from "@/lib/api";
+
+/**
+ * 計画立てが苦手な子供向けのテンプレート集。
+ * 各テンプレートには title とタスク一覧が含まれる。
+ */
+const PLAN_TEMPLATES = [
+  {
+    id: "elementary_basic",
+    label: "📚 小学生・基本セット",
+    title: "今日の勉強",
+    tasks: [
+      { subject: "国語", estimated_minutes: 20, is_homework: true, description: "教科書を読む・漢字練習" },
+      { subject: "算数", estimated_minutes: 30, is_homework: true, description: "計算ドリル" },
+      { subject: "読書", estimated_minutes: 15, is_homework: false, description: "好きな本を読む" },
+    ],
+  },
+  {
+    id: "homework_only",
+    label: "✏️ 宿題だけコース",
+    title: "宿題をやろう",
+    tasks: [
+      { subject: "国語の宿題", estimated_minutes: 20, is_homework: true, description: "" },
+      { subject: "算数の宿題", estimated_minutes: 20, is_homework: true, description: "" },
+    ],
+  },
+  {
+    id: "test_prep",
+    label: "📝 テスト前対策",
+    title: "テスト勉強",
+    tasks: [
+      { subject: "テスト範囲の見直し", estimated_minutes: 30, is_homework: false, description: "教科書・ノートを読む" },
+      { subject: "問題を解く", estimated_minutes: 30, is_homework: false, description: "問題集・プリント" },
+      { subject: "間違えた問題の確認", estimated_minutes: 15, is_homework: false, description: "答え合わせ・復習" },
+    ],
+  },
+  {
+    id: "short_daily",
+    label: "⏱️ 短時間・毎日コース",
+    title: "毎日の学習",
+    tasks: [
+      { subject: "計算練習", estimated_minutes: 10, is_homework: false, description: "計算カード・ドリル" },
+      { subject: "漢字練習", estimated_minutes: 10, is_homework: false, description: "漢字ドリル" },
+      { subject: "英単語", estimated_minutes: 10, is_homework: false, description: "単語カード" },
+    ],
+  },
+];
 
 export default function PlansPage() {
   const router = useRouter();
@@ -95,6 +142,15 @@ export default function PlansPage() {
   /** 最低 1 行は残すようにタスク行を削除 */
   const removeTask = (i) => { if (tasks.length > 1) setTasks(tasks.filter((_, idx) => idx !== i)); };
 
+  /** テンプレートを適用してタイトルとタスクを上書きする */
+  const applyTemplate = (templateId) => {
+    if (!templateId) return;
+    const tpl = PLAN_TEMPLATES.find((t) => t.id === templateId);
+    if (!tpl) return;
+    setTitle(tpl.title);
+    setTasks(tpl.tasks.map((t) => ({ ...t })));
+  };
+
   /** 計画を作成し、成功後にフォームをリセットして一覧を再取得 */
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -133,6 +189,7 @@ export default function PlansPage() {
           <div className="nav-links">
             <a href="/parent/dashboard">ホーム</a>
             <a href="/parent/plans" className="active">計画</a>
+            <a href="/parent/schedule">週間予定</a>
             <a href="/parent/rules">ルール</a>
             <a href="/parent/wallet">ウォレット</a>
             <a data-testid="logout-link" href="/" onClick={async (e) => { e.preventDefault(); localStorage.removeItem("s2a_user"); await signOut({ callbackUrl: "/" }); }}>ログアウト</a>
@@ -195,6 +252,25 @@ export default function PlansPage() {
           <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 560, maxHeight: "85vh", overflowY: "auto" }}>
             <h2>📚 学習計画を作成</h2>
             <form onSubmit={handleCreate}>
+              {/* テンプレート選択 */}
+              <div className="form-group" style={{ marginBottom: 16 }}>
+                <label style={{ fontWeight: 600 }}>🗂️ テンプレートから始める（任意）</label>
+                <select
+                  className="form-input"
+                  defaultValue=""
+                  onChange={(e) => applyTemplate(e.target.value)}
+                  data-testid="template-select"
+                >
+                  <option value="">-- テンプレートを選択 --</option>
+                  {PLAN_TEMPLATES.map((tpl) => (
+                    <option key={tpl.id} value={tpl.id}>{tpl.label}</option>
+                  ))}
+                </select>
+                <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: 4 }}>
+                  選択するとタイトルとタスクが自動で入力されます。後から編集できます。
+                </p>
+              </div>
+
               {/* 基本情報: 子供セレクタ + 日付 */}
               <div className="grid-2">
                 <div className="form-group">

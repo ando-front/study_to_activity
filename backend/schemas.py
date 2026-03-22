@@ -12,11 +12,13 @@ class UserCreate(BaseModel):
     name: str
     role: str  # "parent" or "child"
     pin: Optional[str] = None
+    email: Optional[str] = None  # For Google OAuth
 
 
 class UserOut(BaseModel):
     id: int
     name: str
+    email: Optional[str] = None
     role: str
     is_nintendo_linked: bool = False
     created_at: datetime
@@ -177,11 +179,24 @@ class ChildDashboard(BaseModel):
     approved_tasks: int
 
 
+class WeeklySchedule(BaseModel):
+    """Weekly view: plans grouped by day-of-week label (月〜日).
+
+    ``days`` keys are the 7 Japanese weekday labels in order:
+    "月", "火", "水", "木", "金", "土", "日" (Mon–Sun).
+    Each value is a (possibly empty) list of plans for that day.
+    """
+    week_start: date
+    week_end: date
+    days: dict[str, list[StudyPlanOut]]
+
+
 class ParentDashboard(BaseModel):
     children: list[UserOut]
     pending_approvals: list[StudyTaskOut]
     today_plans: list[StudyPlanOut]
     active_rules: list[RewardRuleOut]
+
 
 
 # --- Reward Log ---
