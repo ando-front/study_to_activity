@@ -103,6 +103,17 @@ export const plansApi = {
       method: "POST",
       body: JSON.stringify(taskData),
     }),
+
+  /**
+   * 週間スケジュールを取得する。
+   * @param {Object} params - オプションの { child_id, week_start (YYYY-MM-DD) }
+   */
+  weekly: (params = {}) => {
+    const q = new URLSearchParams();
+    if (params.child_id) q.set("child_id", params.child_id);
+    if (params.week_start) q.set("week_start", params.week_start);
+    return request(`/plans/weekly?${q.toString()}`);
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -223,17 +234,23 @@ export const walletApi = {
 // Switch 連携 API
 // ---------------------------------------------------------------------------
 
+/** Switch API リクエスト用のヘッダー（API キーが設定されている場合に付与） */
+function switchHeaders() {
+  const key = process.env.NEXT_PUBLIC_BACKEND_API_KEY;
+  return key ? { "X-API-Key": key } : {};
+}
+
 export const switchApi = {
   /** 連携開始用の URL を取得 */
-  getAuthUrl: () => request("/switch/auth-url"),
+  getAuthUrl: () => request("/switch/auth-url", { headers: switchHeaders() }),
 
   /** 連携を完了（URL/コードを送信） */
   connect: (data) =>
-    request("/switch/connect", { method: "POST", body: JSON.stringify(data) }),
+    request("/switch/connect", { method: "POST", body: JSON.stringify(data), headers: switchHeaders() }),
 
   /** 連携済みデバイス一覧を取得 */
-  listDevices: (userId) => request(`/switch/devices/${userId}`),
+  listDevices: (userId) => request(`/switch/devices/${userId}`, { headers: switchHeaders() }),
 
   /** 現在の残高を Switch に同期 */
-  sync: (userId) => request(`/switch/sync/${userId}`, { method: "POST" }),
+  sync: (userId) => request(`/switch/sync/${userId}`, { method: "POST", headers: switchHeaders() }),
 };

@@ -20,6 +20,7 @@ def register_user(data: UserCreate, db: Annotated[Session, Depends(get_db)]):
         name=data.name,
         role=UserRole(data.role),
         pin=hash_pin(data.pin),
+        email=data.email,
     )
     db.add(user)
     db.flush()

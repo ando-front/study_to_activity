@@ -1,7 +1,7 @@
 from __future__ import annotations
 """Study plans router - CRUD for daily/weekly study plans."""
 
-from datetime import date
+from datetime import date, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from backend.database import get_db
 from backend.models import StudyPlan, StudyTask, User, UserRole
-from backend.schemas import StudyPlanCreate, StudyPlanOut
+from backend.schemas import StudyPlanCreate, StudyPlanOut, WeeklySchedule
 
 router = APIRouter()
 
@@ -48,6 +48,45 @@ def create_plan(data: StudyPlanCreate, db: Annotated[Session, Depends(get_db)]):
     db.commit()
     db.refresh(plan)
     return plan
+
+
+@router.get("/weekly", response_model=WeeklySchedule)
+def get_weekly_schedule(
+    db: Annotated[Session, Depends(get_db)],
+    child_id: Annotated[int | None, Query()] = None,
+    week_start: Annotated[date | None, Query()] = None,
+):
+    """Return a week's worth of study plans (Mon–Sun) for the given child.
+
+    If ``week_start`` is omitted, the current week's Monday is used.
+    """
+    today = date.today()
+    if week_start is None:
+        # Default to the Monday of the current week
+        week_start = today - timedelta(days=today.weekday())
+    week_end = week_start + timedelta(days=6)
+
+    query = db.query(StudyPlan).filter(
+        StudyPlan.plan_date >= week_start,
+        StudyPlan.plan_date <= week_end,
+    )
+    if child_id is not None:
+        query = query.filter(StudyPlan.child_id == child_id)
+
+    plans = query.order_by(StudyPlan.plan_date.asc()).all()
+
+    # Group by day-of-week label
+    DAY_LABELS = ["月", "火", "水", "木", "金", "土", "日"]
+    days: dict[str, list] = {label: [] for label in DAY_LABELS}
+    for plan in plans:
+        weekday = plan.plan_date.weekday()  # 0=Mon … 6=Sun
+        days[DAY_LABELS[weekday]].append(StudyPlanOut.model_validate(plan))
+
+    return WeeklySchedule(
+        week_start=week_start,
+        week_end=week_end,
+        days=days,
+    )
 
 
 @router.get("/", response_model=list[StudyPlanOut])

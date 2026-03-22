@@ -158,6 +158,7 @@ export default function ParentDashboard() {
           <div className="nav-links">
             <a href="/parent/dashboard" className="active">ホーム</a>
             <a href="/parent/plans">計画</a>
+            <a href="/parent/schedule">週間予定</a>
             <a href="/parent/rules">ルール</a>
             <a href="/parent/wallet">ウォレット</a>
             <a data-testid="logout-link" href="/" onClick={async (e) => { e.preventDefault(); localStorage.removeItem("s2a_user"); await signOut({ callbackUrl: "/" }); }}>ログアウト</a>
