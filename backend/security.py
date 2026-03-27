@@ -1,5 +1,6 @@
 import os
 import secrets
+
 from cryptography.fernet import Fernet
 from fastapi import HTTPException, Security
 from fastapi.security import APIKeyHeader
@@ -8,18 +9,27 @@ from passlib.context import CryptContext
 # --- PIN Hashing (bcrypt) ---
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-def hash_pin(pin: str) -> str:
+
+def hash_pin(pin: str | None) -> str | None:
     if not pin:
         return None
     return pwd_context.hash(pin)
 
-def verify_pin(plain_pin: str, hashed_pin: str) -> bool:
+
+def verify_pin(plain_pin: str | None, hashed_pin: str | None) -> bool:
+    """Verify a PIN against its stored hash.
+
+    Returns True if the PIN matches, False otherwise.
+    Handles legacy plain-text PINs stored before bcrypt was introduced.
+    """
     if not hashed_pin:
-        return True  # Default no PIN
+        return True  # No PIN required
+    if not plain_pin:
+        return False  # PIN required but not provided
     try:
         return pwd_context.verify(plain_pin, hashed_pin)
     except Exception:
-        # Fallback for plain text legacy PINs
+        # Fallback for legacy plain-text PINs stored before bcrypt migration
         return plain_pin == hashed_pin
 
 # --- Token Encryption (Fernet) ---
