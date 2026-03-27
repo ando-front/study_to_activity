@@ -57,6 +57,7 @@ test('S2A full workflow: Create plan, complete task, and approve', async ({ page
   // 5. タスクの実施 (開始 -> 完了)
   await expect(page.getByTestId('task-start-button').first()).toBeVisible({ timeout: 10000 });
   await page.getByTestId('task-start-button').first().click();
+  await expect(page.locator('.badge', { hasText: '進行中' }).first()).toBeVisible();
   
   await expect(page.getByTestId('task-complete-button').first()).toBeVisible({ timeout: 10000 });
   await page.getByTestId('task-complete-button').first().click();
