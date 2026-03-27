@@ -1,5 +1,6 @@
 import os
 import secrets
+
 from cryptography.fernet import Fernet
 from fastapi import HTTPException, Security
 from fastapi.security import APIKeyHeader
