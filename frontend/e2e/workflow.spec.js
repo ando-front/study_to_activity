@@ -14,6 +14,10 @@ test('S2A full workflow: Create plan, complete task, and approve', async ({ page
   
   // ログイン (お父さん)
   await page.getByRole('button', { name: 'お父さん' }).click();
+  await page.waitForURL(/.*parent\/login/);
+  await page.getByTestId(/^user-select-/).filter({ hasText: 'お父さん' }).click();
+  await page.getByTestId('pin-input').fill('1234');
+  await page.getByTestId('pin-login-button').click();
   await page.waitForURL(/.*parent\/dashboard/);
 
   // 2. 計画の作成
@@ -46,13 +50,20 @@ test('S2A full workflow: Create plan, complete task, and approve', async ({ page
   // 4. タスクの実施 (開始 -> 完了)
   await expect(page.getByTestId('task-start-button').first()).toBeVisible({ timeout: 10000 });
   await page.getByTestId('task-start-button').first().click();
+  await expect(page.locator('.badge', { hasText: '進行中' }).first()).toBeVisible();
   
   await expect(page.getByTestId('task-complete-button').first()).toBeVisible({ timeout: 10000 });
   await page.getByTestId('task-complete-button').first().click();
   
+  await expect(page.locator('.badge', { hasText: '承認待ち' }).first()).toBeVisible();
+  
   // 5. ログアウトして親で承認
   await page.getByTestId('logout-link').click();
   await page.getByRole('button', { name: 'お父さん' }).click();
+  await page.waitForURL(/.*parent\/login/);
+  await page.getByTestId(/^user-select-/).filter({ hasText: 'お父さん' }).click();
+  await page.getByTestId('pin-input').fill('1234');
+  await page.getByTestId('pin-login-button').click();
   await page.waitForURL(/.*parent\/dashboard/);
   
   // 承認
@@ -60,5 +71,5 @@ test('S2A full workflow: Create plan, complete task, and approve', async ({ page
   await page.getByRole('button', { name: '承認' }).first().click();
   
   // 6. 最終確認
-  await expect(page.locator('text=承認しました！').first()).toBeVisible();
+  await expect(page.getByText(/承認しました！/)).toBeVisible();
 });

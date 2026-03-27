@@ -72,7 +72,7 @@ def start_task(task_id: int, db: Annotated[Session, Depends(get_db)]):
         raise HTTPException(status_code=400, detail="このタスクは開始できません")
 
     task.status = TaskStatus.IN_PROGRESS
-    task.started_at = datetime.now(UTC)
+    task.started_at = datetime.utcnow()
     db.commit()
     db.refresh(task)
     return task
@@ -93,13 +93,13 @@ def complete_task(
         raise HTTPException(status_code=400, detail="このタスクは完了できません")
 
     task.status = TaskStatus.COMPLETED
-    task.completed_at = datetime.now(UTC)
+    task.completed_at = datetime.utcnow()
 
     if actual_minutes is not None:
         task.actual_minutes = actual_minutes
     elif task.started_at:
         # Auto-calculate from timer
-        elapsed = (datetime.now(UTC) - task.started_at).total_seconds() / 60
+        elapsed = (datetime.utcnow() - task.started_at).total_seconds() / 60
         task.actual_minutes = int(elapsed)
 
     db.commit()
@@ -132,7 +132,7 @@ def approve_task(
         raise HTTPException(status_code=403, detail="親ユーザーのみ承認できます")
 
     task.status = TaskStatus.APPROVED
-    task.approved_at = datetime.now(UTC)
+    task.approved_at = datetime.utcnow()
     task.approved_by = parent_id
     db.commit()
 
