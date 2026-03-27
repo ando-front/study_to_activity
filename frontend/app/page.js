@@ -27,6 +27,13 @@ export default function Home() {
   const [registerPin, setRegisterPin] = useState("");
   const [registerEmail, setRegisterEmail] = useState("");
 
+  // PIN ダイアログ（PIN 付き親ユーザー用）
+  const [showPinDialog, setShowPinDialog] = useState(false);
+  const [selectedParent, setSelectedParent] = useState(null);
+  const [pinInput, setPinInput] = useState("");
+  const [pinError, setPinError] = useState("");
+  const [pinLoading, setPinLoading] = useState(false);
+
   /** 初回マウント時に登録済みユーザーを取得 */
   useEffect(() => {
     authApi
@@ -38,15 +45,51 @@ export default function Home() {
 
   /**
    * ユーザーカードをタップしたときの処理。
-   * - 親ユーザーは OAuth ログインページへ遷移する
+   * - 親ユーザーはバックエンドの PIN 認証を経由して localStorage に保存しダッシュボードへ遷移する
    * - 子供ユーザーは localStorage に選択ユーザーを保存してダッシュボードへ遷移する
    */
-  const handleSelect = (user) => {
+  const handleSelect = async (user) => {
     if (user.role === "parent") {
-      router.push("/parent/login");
+      // PIN なしでログインを試みる（PIN 未設定ユーザーはそのまま成功）
+      try {
+        const result = await authApi.login({ user_id: user.id, pin: "" });
+        localStorage.setItem("s2a_user", JSON.stringify(result.user));
+        router.push("/parent/dashboard");
+      } catch (err) {
+        if (isNetworkError(err)) {
+          alert("サーバーに接続できません。しばらく待ってからもう一度お試しください。");
+        } else {
+          // PIN が必要な場合はダイアログを表示
+          setSelectedParent(user);
+          setPinInput("");
+          setPinError("");
+          setShowPinDialog(true);
+        }
+      }
     } else {
       localStorage.setItem("s2a_user", JSON.stringify(user));
       router.push("/child/dashboard");
+    }
+  };
+
+  /** PIN ダイアログのサブミットハンドラ */
+  const handlePinSubmit = async (e) => {
+    e.preventDefault();
+    setPinLoading(true);
+    setPinError("");
+    try {
+      const result = await authApi.login({ user_id: selectedParent.id, pin: pinInput });
+      localStorage.setItem("s2a_user", JSON.stringify(result.user));
+      setShowPinDialog(false);
+      router.push("/parent/dashboard");
+    } catch (err) {
+      if (isNetworkError(err)) {
+        setPinError("サーバーに接続できません。しばらく待ってからもう一度お試しください。");
+      } else {
+        setPinError("PINが正しくありません");
+      }
+    } finally {
+      setPinLoading(false);
     }
   };
 
@@ -214,6 +257,45 @@ export default function Home() {
                 <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
                   <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>登録</button>
                   <button type="button" className="btn btn-secondary" onClick={() => { setShowRegister(false); setRegisterEmail(""); }}>キャンセル</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* ===== PIN 認証ダイアログ（PIN 付き親ユーザー用） ===== */}
+        {showPinDialog && selectedParent && (
+          <div className="modal-overlay" onClick={() => setShowPinDialog(false)}>
+            <div className="modal" onClick={(e) => e.stopPropagation()}>
+              <h2>PIN を入力</h2>
+              <p style={{ color: "var(--text-secondary)", marginBottom: 16, fontSize: "0.95rem" }}>
+                {selectedParent.name} さんの PIN コードを入力してください
+              </p>
+              {pinError && (
+                <div style={{ background: "#fee2e2", border: "1px solid #fca5a5", borderRadius: "var(--radius-sm)", padding: "10px 14px", marginBottom: 12, color: "#dc2626", fontSize: "0.9rem" }}>
+                  {pinError}
+                </div>
+              )}
+              <form onSubmit={handlePinSubmit}>
+                <div className="form-group">
+                  <input
+                    className="form-input"
+                    type="password"
+                    value={pinInput}
+                    onChange={(e) => setPinInput(e.target.value)}
+                    placeholder="4桁のPIN"
+                    maxLength={4}
+                    autoFocus
+                    data-testid="pin-input"
+                  />
+                </div>
+                <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+                  <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={pinLoading}>
+                    {pinLoading ? "確認中..." : "ログイン"}
+                  </button>
+                  <button type="button" className="btn btn-secondary" onClick={() => setShowPinDialog(false)}>
+                    キャンセル
+                  </button>
                 </div>
               </form>
             </div>
