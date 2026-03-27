@@ -11,9 +11,12 @@ test('S2A full workflow: Create plan, complete task, and approve', async ({ page
 
   // Get seed users from the backend
   const usersRes = await page.request.get('http://localhost:8000/api/auth/users');
+  expect(usersRes.ok()).toBeTruthy();
   const users = await usersRes.json();
   const parent = users.find(u => u.name === 'お父さん');
   const child = users.find(u => u.name === 'たろう');
+  expect(parent, 'Seed user お父さん not found - did the backend seed correctly?').toBeTruthy();
+  expect(child, 'Seed user たろう not found - did the backend seed correctly?').toBeTruthy();
 
   // 2. Login as parent via localStorage (bypasses OAuth for E2E testing)
   await page.goto('/');

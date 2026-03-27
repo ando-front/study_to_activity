@@ -16,8 +16,13 @@ from backend.seed import seed as _auto_seed
 Base.metadata.create_all(bind=engine)
 database.ensure_schema_compatibility()
 
-# Auto-seed initial data when the database is empty (e.g. fresh CI run or first launch)
-_auto_seed()
+# Auto-seed initial data when the database is empty and not in production
+# (e.g. fresh CI run or first local launch). Disabled in production to avoid
+# exposing well-known seed credentials. Set AUTO_SEED=1 to force in any env.
+IS_PROD_EARLY = os.getenv("ENV") == "production"
+_auto_seed_enabled = os.getenv("AUTO_SEED") == "1" or not IS_PROD_EARLY
+if _auto_seed_enabled:
+    _auto_seed()
 
 app = FastAPI(
     title="Study to Activity (S2A)",
