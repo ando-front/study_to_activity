@@ -54,6 +54,8 @@ jobs:
       run: npm run test:e2e
       env:
         CI: true
+        AUTH_SECRET: e2e-ci-test-secret
+        NEXTAUTH_URL: http://localhost:3000
 
   # Preview deployment: triggered on pull requests after tests pass.
   # Deploys to a Vercel preview URL so reviewers can test changes before merging.
