@@ -26,7 +26,7 @@ module.exports = defineConfig({
       timeout: 120 * 1000,
     },
     {
-      command: '../backend/venv/bin/python ../backend/main.py',
+      command: 'python ../backend/main.py',
       url: 'http://localhost:8000/api/health',
       reuseExistingServer: !process.env.CI,
       timeout: 120 * 1000,
