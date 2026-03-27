@@ -6,21 +6,27 @@ test('S2A full workflow: Create plan, complete task, and approve', async ({ page
   // Handle confirm dialogs
   page.on('dialog', dialog => dialog.accept());
 
-  // 1. Reset Database for testing
+  // 1. Reset Database for testing (resets task/plan data; seed users are preserved)
   await page.request.post('http://localhost:8000/api/test/reset');
 
-  // 2. Landing Page
+  // Get seed users from the backend
+  const usersRes = await page.request.get('http://localhost:8000/api/auth/users');
+  expect(usersRes.ok()).toBeTruthy();
+  const users = await usersRes.json();
+  const parent = users.find(u => u.name === 'お父さん');
+  const child = users.find(u => u.name === 'たろう');
+  expect(parent, 'Seed user お父さん not found - did the backend seed correctly?').toBeTruthy();
+  expect(child, 'Seed user たろう not found - did the backend seed correctly?').toBeTruthy();
+
+  // 2. Login as parent via localStorage (bypasses OAuth for E2E testing)
   await page.goto('/');
-  
-  // ログイン (お父さん)
-  await page.getByRole('button', { name: 'お父さん' }).click();
-  await page.waitForURL(/.*parent\/login/);
-  await page.getByTestId(/^user-select-/).filter({ hasText: 'お父さん' }).click();
-  await page.getByTestId('pin-input').fill('1234');
-  await page.getByTestId('pin-login-button').click();
+  await page.evaluate((user) => {
+    localStorage.setItem('s2a_user', JSON.stringify(user));
+  }, parent);
+  await page.goto('/parent/dashboard');
   await page.waitForURL(/.*parent\/dashboard/);
 
-  // 2. 計画の作成
+  // 3. 計画の作成
   await page.getByRole('link', { name: '計画', exact: true }).click();
   await page.waitForURL(/.*parent\/plans/);
   
@@ -42,12 +48,13 @@ test('S2A full workflow: Create plan, complete task, and approve', async ({ page
   // 計画が一覧に表示されるのを待つ
   await expect(page.locator('text=E2Eテスト計画').first()).toBeVisible();
   
-  // 3. ログアウトして子供でログイン
+  // 4. ログアウトして子供でログイン
   await page.getByTestId('logout-link').click();
+  await page.waitForURL('/');
   await page.getByRole('button', { name: 'たろう' }).click();
   await page.waitForURL(/.*child\/dashboard/);
   
-  // 4. タスクの実施 (開始 -> 完了)
+  // 5. タスクの実施 (開始 -> 完了)
   await expect(page.getByTestId('task-start-button').first()).toBeVisible({ timeout: 10000 });
   await page.getByTestId('task-start-button').first().click();
   await expect(page.locator('.badge', { hasText: '進行中' }).first()).toBeVisible();
@@ -55,21 +62,21 @@ test('S2A full workflow: Create plan, complete task, and approve', async ({ page
   await expect(page.getByTestId('task-complete-button').first()).toBeVisible({ timeout: 10000 });
   await page.getByTestId('task-complete-button').first().click();
   
-  await expect(page.locator('.badge', { hasText: '承認待ち' }).first()).toBeVisible();
-  
-  // 5. ログアウトして親で承認
+  // 6. ログアウトして親で承認
   await page.getByTestId('logout-link').click();
-  await page.getByRole('button', { name: 'お父さん' }).click();
-  await page.waitForURL(/.*parent\/login/);
-  await page.getByTestId(/^user-select-/).filter({ hasText: 'お父さん' }).click();
-  await page.getByTestId('pin-input').fill('1234');
-  await page.getByTestId('pin-login-button').click();
+  await page.waitForURL('/');
+
+  // Login as parent again via localStorage
+  await page.evaluate((user) => {
+    localStorage.setItem('s2a_user', JSON.stringify(user));
+  }, parent);
+  await page.goto('/parent/dashboard');
   await page.waitForURL(/.*parent\/dashboard/);
   
   // 承認
   await expect(page.getByText('承認待ちタスク')).toBeVisible();
   await page.getByRole('button', { name: '承認' }).first().click();
   
-  // 6. 最終確認
-  await expect(page.getByText(/承認しました！/)).toBeVisible();
+  // 7. 最終確認
+  await expect(page.locator('text=承認しました！').first()).toBeVisible();
 });

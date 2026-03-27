@@ -1,7 +1,7 @@
 """Tasks router - manage study task lifecycle (start, complete, approve)."""
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
@@ -93,8 +93,13 @@ def complete_task(
     if actual_minutes is not None:
         task.actual_minutes = actual_minutes
     elif task.started_at:
-        # Auto-calculate from timer
-        elapsed = (datetime.utcnow() - task.started_at).total_seconds() / 60
+        # Auto-calculate from timer; started_at may be stored as naive UTC by SQLite
+        started = (
+            task.started_at.replace(tzinfo=UTC)
+            if task.started_at.tzinfo is None
+            else task.started_at
+        )
+        elapsed = (datetime.now(UTC) - started).total_seconds() / 60
         task.actual_minutes = int(elapsed)
 
     db.commit()

@@ -10,10 +10,19 @@ from sqlalchemy.orm import Session
 from backend import database
 from backend.database import Base, engine
 from backend.routers import auth, plans, rules, switch, tasks, wallet
+from backend.seed import seed as _auto_seed
 
 # Create all tables
 Base.metadata.create_all(bind=engine)
 database.ensure_schema_compatibility()
+
+# Auto-seed initial data when the database is empty and not in production
+# (e.g. fresh CI run or first local launch). Disabled in production to avoid
+# exposing well-known seed credentials. Set AUTO_SEED=1 to force in any env.
+IS_PROD_EARLY = os.getenv("ENV") == "production"
+_auto_seed_enabled = os.getenv("AUTO_SEED") == "1" or not IS_PROD_EARLY
+if _auto_seed_enabled:
+    _auto_seed()
 
 app = FastAPI(
     title="Study to Activity (S2A)",
