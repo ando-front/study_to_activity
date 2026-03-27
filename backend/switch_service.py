@@ -32,7 +32,7 @@ class SwitchService:
 
         auth = await Authenticator.complete_login(auth, response_url)
         self._auth = None
-        return auth.get_session_token
+        return auth.get_session_token()
 
     async def get_devices(self, session_token: str):
         """Get a list of devices associated with the account."""
