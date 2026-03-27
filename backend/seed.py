@@ -3,6 +3,7 @@ from backend.models import ActivityWallet, User, UserRole
 from backend.routers.rules import seed_default_rules
 from backend.security import hash_pin
 
+
 def seed():
     # Create tables
     Base.metadata.create_all(bind=engine)

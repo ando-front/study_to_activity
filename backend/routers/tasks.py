@@ -1,7 +1,7 @@
-from __future__ import annotations
 """Tasks router - manage study task lifecycle (start, complete, approve)."""
+from __future__ import annotations
 
-from datetime import UTC, date, datetime
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
@@ -9,11 +9,6 @@ from sqlalchemy.orm import Session
 
 from backend.database import get_db
 from backend.models import (
-    ActivityLog,
-    ActivityWallet,
-    RewardLog,
-    RewardRule,
-    StudyPlan,
     StudyTask,
     TaskStatus,
     User,
