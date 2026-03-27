@@ -1,5 +1,6 @@
-from __future__ import annotations
 """Wallet router - activity time balance management and consumption tracking."""
+
+from __future__ import annotations
 
 from datetime import date
 from typing import Annotated
