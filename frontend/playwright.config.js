@@ -24,6 +24,11 @@ module.exports = defineConfig({
       url: 'http://localhost:3000',
       reuseExistingServer: !process.env.CI,
       timeout: 120 * 1000,
+      env: {
+        AUTH_SECRET: process.env.AUTH_SECRET || (process.env.CI ? 's2a-e2e-test-secret' : undefined),
+        NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || (process.env.CI ? 's2a-e2e-test-secret' : undefined),
+        NEXTAUTH_URL: 'http://localhost:3000',
+      },
     },
     {
       command: 'python ../backend/main.py',
