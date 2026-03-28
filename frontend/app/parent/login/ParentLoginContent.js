@@ -36,8 +36,24 @@ export default function ParentLoginContent() {
   // URL パラメータにエラーがある場合は表示
   useEffect(() => {
     const err = searchParams.get("error");
-    if (err) setError("ログインに失敗しました。もう一度お試しください。");
+    if (err) {
+      if (err === "AccessDenied") {
+        setError("このGoogleアカウントは登録されていません。先にトップページでメールアドレスを登録してください。");
+      } else if (err === "Configuration") {
+        setError("Google ログインの設定が完了していません。管理者にお問い合わせください。");
+      } else {
+        setError("ログインに失敗しました。もう一度お試しください。");
+      }
+      setSigningInOAuth(false);
+    }
   }, [searchParams]);
+
+  // bfcache から復元されたときにローディング状態をリセット
+  useEffect(() => {
+    const onPageShow = (e) => { if (e.persisted) { setSigningInOAuth(false); setSigningInPin(false); } };
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, []);
 
   const handleGoogleLogin = async () => {
     setSigningInOAuth(true);

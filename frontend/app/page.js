@@ -46,6 +46,19 @@ export default function Home() {
   }, []);
 
   /**
+   * bfcache（ブラウザの戻るキャッシュ）対策。
+   * Google ログイン中にエラーが発生してエラーページへ遷移し、
+   * ユーザーが「戻る」を押したときにページが bfcache から復元されると
+   * signingInGoogle が true のままになってボタンが永久に無効化されてしまう。
+   * pageshow イベントで bfcache 復元を検知してリセットする。
+   */
+  useEffect(() => {
+    const onPageShow = (e) => { if (e.persisted) setSigningInGoogle(false); };
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, []);
+
+  /**
    * ユーザーカードをタップしたときの処理。
    * - 親ユーザーはバックエンドの PIN 認証を経由して localStorage に保存しダッシュボードへ遷移する
    * - 子供ユーザーは localStorage に選択ユーザーを保存してダッシュボードへ遷移する
