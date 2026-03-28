@@ -76,7 +76,15 @@ class User(Base):
     def get_nintendo_token(self) -> str:
         from backend.security import decrypt_token
 
-        return decrypt_token(self.nintendo_session_token)
+        try:
+            return decrypt_token(self.nintendo_session_token)
+        except Exception:
+            import logging
+            logging.getLogger(__name__).warning(
+                "Failed to decrypt Nintendo token for user %s — token may be stale after key rotation",
+                self.id,
+            )
+            return None
 
     def set_nintendo_token(self, token: str):
         from backend.security import encrypt_token
