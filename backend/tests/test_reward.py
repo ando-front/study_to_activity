@@ -66,3 +66,45 @@ def test_wallet_initial_balance(client):
     dash_resp = client.get(f"/api/tasks/dashboard/child/{child_id}")
     assert dash_resp.status_code == 200
     assert dash_resp.json()["wallet_balance"] == 0
+
+
+def test_rejected_task_can_be_restarted(client):
+    """差し戻されたタスクを子供が再開できるかのテスト"""
+    # 1. ユーザー作成
+    parent_resp = client.post(
+        "/api/auth/register", json={"name": "PR", "role": "parent", "pin": "1234"}
+    )
+    child_resp = client.post(
+        "/api/auth/register", json={"name": "CR", "role": "child", "pin": "1234"}
+    )
+    parent_id = parent_resp.json()["id"]
+    child_id = child_resp.json()["id"]
+
+    # 2. 学習計画作成
+    plan_resp = client.post(
+        "/api/plans/",
+        json={
+            "child_id": child_id,
+            "plan_date": str(date.today()),
+            "title": "Redo Plan",
+            "tasks": [{"subject": "Math", "estimated_minutes": 30, "is_homework": False}],
+        },
+    )
+    assert plan_resp.status_code == 200
+    task_id = plan_resp.json()["tasks"][0]["id"]
+
+    # 3. タスク完了 → 差し戻し
+    client.post(f"/api/tasks/{task_id}/complete")
+    reject_resp = client.post(f"/api/tasks/{task_id}/reject")
+    assert reject_resp.status_code == 200
+    assert reject_resp.json()["status"] == "rejected"
+
+    # 4. 差し戻されたタスクを再開できる
+    restart_resp = client.post(f"/api/tasks/{task_id}/start")
+    assert restart_resp.status_code == 200
+    assert restart_resp.json()["status"] == "in_progress"
+
+    # 5. 再完了 → 承認が正常に動作する
+    client.post(f"/api/tasks/{task_id}/complete")
+    approve_resp = client.post(f"/api/tasks/{task_id}/approve?parent_id={parent_id}")
+    assert approve_resp.status_code == 200
