@@ -63,7 +63,7 @@ def start_task(task_id: int, db: Annotated[Session, Depends(get_db)]):
     if not task:
         raise HTTPException(status_code=404, detail="タスクが見つかりません")
 
-    if task.status != TaskStatus.PENDING:
+    if task.status not in (TaskStatus.PENDING, TaskStatus.REJECTED):
         raise HTTPException(status_code=400, detail="このタスクは開始できません")
 
     task.status = TaskStatus.IN_PROGRESS

@@ -41,6 +41,12 @@ async def connect_switch(
         user.set_nintendo_token(session_token)
         db.commit()
         return {"message": "Nintendo Account と連携しました"}
+    except ValueError as e:
+        logger.error(f"Failed to parse Switch response URL: {e}")
+        raise HTTPException(
+            status_code=400,
+            detail="URLの形式が正しくありません。任天堂サイトの「この人を選択」ボタンを右クリック（長押し）して「リンクのアドレスをコピー」し、そのURLを貼り付けてください。",
+        ) from e
     except Exception as e:
         logger.error(f"Failed to connect Switch: {e}")
         raise HTTPException(
@@ -61,8 +67,15 @@ async def list_switch_devices(
 
     try:
         token = user.get_nintendo_token()
+        if not token:
+            raise HTTPException(
+                status_code=400,
+                detail="連携情報が無効または期限切れです。再度 Nintendo Account の連携を行ってください。（サーバー再起動後に連携情報が失われることがあります）",
+            )
         devices = await switch_service.get_devices(token)
         return devices
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Failed to list devices: {e}")
         raise HTTPException(
@@ -96,6 +109,11 @@ async def sync_balance_to_switch(
 
     try:
         token = parent.get_nintendo_token()
+        if not token:
+            raise HTTPException(
+                status_code=400,
+                detail="連携情報が無効または期限切れです。再度 Nintendo Account の連携を行ってください。（サーバー再起動後に連携情報が失われることがあります）",
+            )
         devices = await switch_service.get_devices(token)
         synced_names = []
         for dev in devices:
@@ -106,6 +124,8 @@ async def sync_balance_to_switch(
                 synced_names.append(dev["name"])
 
         return {"message": f"{limit}分 を同期しました", "synced_devices": synced_names}
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Failed to sync to Switch: {e}")
         raise HTTPException(
