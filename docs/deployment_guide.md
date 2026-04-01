@@ -38,6 +38,11 @@ docker-compose up --build
    - Framework Preset: `Next.js`
 3. **Environment Variables**:
    - `NEXT_PUBLIC_API_URL`: `https://your-backend-api.render.com/api`
+   - `BACKEND_URL`: `https://your-backend-api.render.com`（サーバーサイド用、NextAuth の signIn コールバックがバックエンドを呼び出す際に使用）
+   - `AUTH_SECRET`: ランダムな文字列（`openssl rand -base64 32` で生成）※ **必須。未設定だと Google ログイン時にサーバーエラーが発生する**
+   - `GOOGLE_CLIENT_ID`: Google Cloud Console で取得した OAuth 2.0 クライアント ID
+   - `GOOGLE_CLIENT_SECRET`: Google Cloud Console で取得した OAuth 2.0 クライアント シークレット
+   - `NEXTAUTH_URL`: `https://your-frontend.vercel.app`（本番フロントエンドの URL）
 
 ## 4. セキュリティ設定
 
