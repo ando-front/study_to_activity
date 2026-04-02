@@ -14,7 +14,7 @@ def seed():
             print("Database already contains users. Skipping seed.")
             return
 
-        parent = User(name="お父さん", role=UserRole.PARENT, pin=hash_pin("1234"))
+        parent = User(name="お父さん", role=UserRole.PARENT, pin=hash_pin("1234"), email="angie07.inet@gmail.com")
         db.add(parent)
 
         child = User(name="たろう", role=UserRole.CHILD, pin=hash_pin("0000"))

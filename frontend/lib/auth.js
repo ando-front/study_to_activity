@@ -58,9 +58,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     /**
      * Google OAuth でログインした場合はバックエンドのユーザー一覧と照合する。
      * email が一致する親ユーザーが存在する場合のみログインを許可する。
+     * バックエンドDBに未登録でも ALLOWED_EMAILS 環境変数に含まれていれば許可する。
      */
     async signIn({ user, account }) {
       if (account?.provider === "google") {
+        const allowedEmails = (process.env.ALLOWED_EMAILS || "")
+          .split(",")
+          .map((e) => e.trim())
+          .filter(Boolean);
+
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000);
         try {
@@ -68,17 +74,29 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             signal: controller.signal,
           });
           clearTimeout(timeoutId);
-          if (!res.ok) return "/parent/login?error=BackendUnavailable"; // バックエンドエラー時
+          if (!res.ok) {
+            // バックエンドエラー時は ALLOWED_EMAILS でフォールバック
+            return allowedEmails.includes(user.email) || "/parent/login?error=BackendUnavailable";
+          }
           const users = await res.json();
           const matched = users.find(
             (u) => u.role === "parent" && u.email === user.email
           );
-          if (!matched) return false; // 未登録ユーザーはアクセスを拒否
-          user.backendId = matched.id;
-          user.role = matched.role;
+          if (matched) {
+            user.backendId = matched.id;
+            user.role = matched.role;
+            return true;
+          }
+          // DBに未登録の場合は ALLOWED_EMAILS でフォールバック
+          if (allowedEmails.includes(user.email)) {
+            user.role = "parent";
+            return true;
+          }
+          return false; // 未登録かつ ALLOWED_EMAILS にもない場合はアクセスを拒否
         } catch (err) {
           clearTimeout(timeoutId);
-          // タイムアウトまたはバックエンド接続不可
+          // タイムアウトまたはバックエンド接続不可 → ALLOWED_EMAILS でフォールバック
+          if (allowedEmails.includes(user.email)) return true;
           return "/parent/login?error=BackendUnavailable";
         }
       }
