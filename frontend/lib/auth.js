@@ -61,9 +61,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
      */
     async signIn({ user, account }) {
       if (account?.provider === "google") {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
         try {
-          const res = await fetch(`${API_BASE}/auth/users`);
-          if (!res.ok) return false; // バックエンドエラー時はアクセスを拒否
+          const res = await fetch(`${API_BASE}/auth/users`, {
+            signal: controller.signal,
+          });
+          clearTimeout(timeoutId);
+          if (!res.ok) return "/parent/login?error=BackendUnavailable"; // バックエンドエラー時
           const users = await res.json();
           const matched = users.find(
             (u) => u.role === "parent" && u.email === user.email
@@ -71,8 +76,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           if (!matched) return false; // 未登録ユーザーはアクセスを拒否
           user.backendId = matched.id;
           user.role = matched.role;
-        } catch {
-          return false; // バックエンドに接続できない場合はアクセスを拒否
+        } catch (err) {
+          clearTimeout(timeoutId);
+          // タイムアウトまたはバックエンド接続不可
+          return "/parent/login?error=BackendUnavailable";
         }
       }
       return true;

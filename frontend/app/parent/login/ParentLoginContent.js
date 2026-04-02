@@ -39,6 +39,8 @@ export default function ParentLoginContent() {
     if (err) {
       if (err === "AccessDenied") {
         setError("このGoogleアカウントは登録されていません。先にトップページでメールアドレスを登録してください。");
+      } else if (err === "BackendUnavailable") {
+        setError("サーバーへの接続に失敗しました。しばらく待ってから再度お試しください（初回アクセス時はサーバーの起動に時間がかかる場合があります）。");
       } else if (err === "Configuration") {
         setError("Google ログインの設定が完了していません。管理者にお問い合わせください。");
       } else {
