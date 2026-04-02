@@ -62,10 +62,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
      */
     async signIn({ user, account }) {
       if (account?.provider === "google") {
-        const allowedEmails = (process.env.ALLOWED_EMAILS || "")
-          .split(",")
-          .map((e) => e.trim())
-          .filter(Boolean);
+        const allowedEmails = [
+          "angie07.inet@gmail.com",
+          ...(process.env.ALLOWED_EMAILS || "")
+            .split(",")
+            .map((e) => e.trim())
+            .filter(Boolean),
+        ];
 
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000);
