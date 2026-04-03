@@ -219,12 +219,22 @@ class RewardLogOut(BaseModel):
 class SwitchAuthUrl(BaseModel):
     url: str
     verifier: str
+    state: Optional[str] = None
 
 
 class SwitchConnectRequest(BaseModel):
     user_id: int
     response_url: str
     verifier: Optional[str] = None
+    state: Optional[str] = None
+
+
+class SwitchCallbackRequest(BaseModel):
+    """Accept session_token_code (or full redirect URL) instead of the full response URL."""
+    user_id: int
+    session_token_code: str  # raw code, full URL, or fragment all accepted
+    verifier: Optional[str] = None
+    state: Optional[str] = None
 
 
 class SwitchDeviceOut(BaseModel):

@@ -295,9 +295,23 @@ export const switchApi = {
   /** 連携開始用の URL を取得 */
   getAuthUrl: () => request("/switch/auth-url", { headers: switchHeaders() }),
 
-  /** 連携を完了（URL/コードを送信） */
+  /** 連携を完了（フル URL を送信、後方互換） */
   connect: (data) =>
     request("/switch/connect", { method: "POST", body: JSON.stringify(data), headers: switchHeaders() }),
+
+  /**
+   * session_token_code で連携を完了する（推奨）。
+   * フル URL、フラグメント（#...）、または生のコードを受け付ける。
+   */
+  callback: (data) =>
+    request("/switch/callback", { method: "POST", body: JSON.stringify(data), headers: switchHeaders() }),
+
+  /**
+   * 認証ステータスをポーリングする。
+   * @returns {{ status: "pending" | "complete" | "expired" | "unknown" }}
+   */
+  authStatus: (state, userId) =>
+    request(`/switch/auth-status/${state}?user_id=${userId}`, { headers: switchHeaders() }),
 
   /** 連携済みデバイス一覧を取得 */
   listDevices: (userId) => request(`/switch/devices/${userId}`, { headers: switchHeaders() }),

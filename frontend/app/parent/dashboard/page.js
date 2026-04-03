@@ -30,8 +30,10 @@ export default function ParentDashboard() {
   const [showSwitchModal, setShowSwitchModal] = useState(false);
   const [switchUrl, setSwitchUrl] = useState("");
   const [switchVerifier, setSwitchVerifier] = useState("");
+  const [switchState, setSwitchState] = useState("");
   const [responseUrl, setResponseUrl] = useState("");
   const [syncing, setSyncing] = useState(false);
+  const [switchConnecting, setSwitchConnecting] = useState(false);
 
   /**
    * 認証ガード: NextAuth セッションまたは localStorage でユーザーを確認する。
@@ -113,32 +115,49 @@ export default function ParentDashboard() {
   /** Nintendo Account 連携開始 */
   const startSwitchConnect = async () => {
     try {
-      const { url, verifier } = await switchApi.getAuthUrl();
+      const { url, verifier, state } = await switchApi.getAuthUrl();
       setSwitchUrl(url);
       setSwitchVerifier(verifier);
+      setSwitchState(state || "");
+      setResponseUrl("");
       setShowSwitchModal(true);
-      // ブラウザで新しいタブを開く
+      // callback ページが使えるよう pending 情報を保存
+      sessionStorage.setItem("s2a_switch_pending", JSON.stringify({ userId: user.id, verifier, state }));
       window.open(url, '_blank');
     } catch (e) { showToast(e.message, "error"); }
   };
 
   /** Nintendo Account 連携完了 */
   const completeSwitchConnect = async () => {
+    const input = responseUrl.trim();
+    if (!input) return;
+    setSwitchConnecting(true);
     try {
-      if (!responseUrl) return;
-      await switchApi.connect({ user_id: user.id, response_url: responseUrl.trim(), verifier: switchVerifier });
-      
-      // ユーザー情報を再取得して state と localStorage を更新
+      // /callback エンドポイントはフル URL・フラグメント・生コードすべてを受け付ける
+      await switchApi.callback({
+        user_id: user.id,
+        session_token_code: input,
+        verifier: switchVerifier,
+        state: switchState || undefined,
+      });
+
       const updatedUser = await authApi.getUser(user.id);
       localStorage.setItem("s2a_user", JSON.stringify(updatedUser));
       setUser(updatedUser);
 
+      sessionStorage.removeItem("s2a_switch_pending");
       showToast("Nintendo Account と連携しました！🎮");
       setShowSwitchModal(false);
       setSwitchVerifier("");
+      setSwitchState("");
       setResponseUrl("");
       fetchData();
-    } catch (e) { showToast(e.message, "error"); }
+    } catch (e) {
+      const msg = e?.message || (typeof e === "object" ? JSON.stringify(e) : String(e));
+      showToast(msg, "error");
+    } finally {
+      setSwitchConnecting(false);
+    }
   };
 
   /** Switch への同期実行 */
@@ -299,25 +318,57 @@ export default function ParentDashboard() {
 
       {/* ===== Switch 連携モーダル ===== */}
       {showSwitchModal && (
-        <div className="modal-overlay" onClick={() => setShowSwitchModal(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 500 }}>
-            <h2>Nintendo Account 連携</h2>
-            <p style={{ fontSize: "0.9rem", color: "var(--text-secondary)", marginBottom: 16 }}>
-              1. 開いた任天堂サイトでログインします。タブが開かなかった場合は<a href={switchUrl} target="_blank" rel="noreferrer" style={{ color: "var(--primary)", textDecoration: "underline" }}>こちらをクリック</a>してください。<br/>
-              2. ログイン後、「この人を選択」ボタンを<b>右クリックしてリンクをコピー</b>してください。<br/>
-              3. コピーしたリンクを下の欄に貼り付けてください。
-            </p>
+        <div className="modal-overlay" onClick={() => { if (!switchConnecting) setShowSwitchModal(false); }}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 520 }}>
+            <h2 style={{ marginBottom: 4 }}>Nintendo Account 連携</h2>
+
+            {/* ステップ説明 */}
+            <ol style={{ fontSize: "0.88rem", color: "var(--text-secondary)", paddingLeft: 18, margin: "12px 0 16px" }}>
+              <li style={{ marginBottom: 8 }}>
+                任天堂サイトでログインしてください。タブが開かなかった場合は
+                <a href={switchUrl} target="_blank" rel="noreferrer" style={{ color: "var(--primary)", textDecoration: "underline" }}>こちら</a>。
+              </li>
+              <li style={{ marginBottom: 8 }}>
+                ログイン後、<b>「この人にする」ボタンのリンクをコピー</b>してください。
+                <ul style={{ marginTop: 6, paddingLeft: 16, color: "var(--text-muted)" }}>
+                  <li><b>Mac / Windows:</b> 右クリック →「リンクのアドレスをコピー」</li>
+                  <li><b>iPhone (Safari):</b> みまもりSwitchアプリが自動起動する場合は、アプリをアンインストールして再試行 → Safariのアドレスバーに表示されるURLをコピー</li>
+                </ul>
+              </li>
+              <li>コピーしたURL（または <code>session_token_code=</code> 以降の値のみ）を下に貼り付けてください。</li>
+            </ol>
+
             <div className="form-group">
-              <label>コピーしたリンク / URL</label>
-              <input className="form-input" 
-                value={responseUrl} 
+              <label style={{ fontWeight: 600 }}>コピーしたURL / コード</label>
+              <input
+                className="form-input"
+                value={responseUrl}
                 onChange={(e) => setResponseUrl(e.target.value)}
-                placeholder="npf71fb..."
+                placeholder="npf54789befb391a838://auth#session_token_code=..."
+                disabled={switchConnecting}
+                style={{ fontFamily: "monospace", fontSize: "0.82rem" }}
               />
+              <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: 4 }}>
+                フルURL・フラグメント（#以降）・生のコードどれでも可
+              </p>
             </div>
-            <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
-              <button className="btn btn-primary" style={{ flex: 1 }} onClick={completeSwitchConnect}>連携を完了する</button>
-              <button className="btn btn-secondary" onClick={() => setShowSwitchModal(false)}>キャンセル</button>
+
+            <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+              <button
+                className="btn btn-primary"
+                style={{ flex: 1 }}
+                onClick={completeSwitchConnect}
+                disabled={switchConnecting || !responseUrl.trim()}
+              >
+                {switchConnecting ? "連携中..." : "連携を完了する"}
+              </button>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowSwitchModal(false)}
+                disabled={switchConnecting}
+              >
+                キャンセル
+              </button>
             </div>
           </div>
         </div>

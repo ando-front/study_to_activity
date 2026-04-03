@@ -8,6 +8,7 @@ from backend.database import get_db
 from backend.models import User, UserRole
 from backend.schemas import (
     SwitchAuthUrl,
+    SwitchCallbackRequest,
     SwitchConnectRequest,
     SwitchDeviceOut,
     SwitchSyncResponse,
@@ -36,7 +37,7 @@ async def connect_switch(
 
     try:
         session_token = await switch_service.complete_login(
-            data.response_url, data.verifier
+            data.response_url, data.verifier, data.state
         )
         user.set_nintendo_token(session_token)
         db.commit()
@@ -45,13 +46,66 @@ async def connect_switch(
         logger.error(f"Failed to parse Switch response URL: {e}")
         raise HTTPException(
             status_code=400,
-            detail="URLの形式が正しくありません。任天堂サイトの「この人を選択」ボタンを右クリック（長押し）して「リンクのアドレスをコピー」し、そのURLを貼り付けてください。",
+            detail="URLの形式が正しくありません。コピーしたURL全体を貼り付けるか、session_token_codeの値のみを入力してください。",
         ) from e
     except Exception as e:
         logger.error(f"Failed to connect Switch: {e}")
         raise HTTPException(
             status_code=400, detail=f"連携に失敗しました: {str(e)}"
         ) from e
+
+
+@router.post("/callback", response_model=dict, dependencies=[Depends(require_api_key)])
+async def switch_callback(
+    data: SwitchCallbackRequest, db: Annotated[Session, Depends(get_db)]
+):
+    """Complete the connection using session_token_code (accepts full URL, fragment, or raw code).
+
+    More flexible than /connect — the user only needs to provide the session_token_code
+    value (or paste the full redirect URL) rather than the complete npf:// response URL.
+    """
+    user = db.query(User).filter(User.id == data.user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="ユーザーが見つかりません")
+
+    try:
+        session_token = await switch_service.complete_login_with_code(
+            data.session_token_code, data.verifier, data.state
+        )
+        user.set_nintendo_token(session_token)
+        db.commit()
+        return {"message": "Nintendo Account と連携しました"}
+    except ValueError as e:
+        logger.error(f"Failed to parse Switch session_token_code: {e}")
+        raise HTTPException(
+            status_code=400,
+            detail="コードの形式が正しくありません。URLまたはsession_token_codeの値を確認してください。",
+        ) from e
+    except Exception as e:
+        logger.error(f"Failed to connect Switch via callback: {e}")
+        raise HTTPException(
+            status_code=400, detail=f"連携に失敗しました: {str(e)}"
+        ) from e
+
+
+@router.get("/auth-status/{state}", dependencies=[Depends(require_api_key)])
+async def get_auth_status(
+    state: str, user_id: int, db: Annotated[Session, Depends(get_db)]
+):
+    """Poll whether Nintendo authentication for a given state is complete.
+
+    Returns {"status": "pending" | "complete" | "expired" | "unknown"}.
+    When complete, the session token is automatically persisted to the user record.
+    """
+    result = switch_service.get_auth_status(state)
+
+    if result["status"] == "complete" and result.get("session_token"):
+        user = db.query(User).filter(User.id == user_id).first()
+        if user:
+            user.set_nintendo_token(result["session_token"])
+            db.commit()
+
+    return {"status": result["status"]}
 
 
 @router.get("/devices/{user_id}", response_model=list[SwitchDeviceOut], dependencies=[Depends(require_api_key)])
