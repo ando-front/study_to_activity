@@ -153,7 +153,7 @@ export default function ParentDashboard() {
       setResponseUrl("");
       fetchData();
     } catch (e) {
-      const msg = e?.message || (typeof e === "object" ? JSON.stringify(e) : String(e));
+      const msg = e?.message || "予期しないエラーが発生しました";
       showToast(msg, "error");
     } finally {
       setSwitchConnecting(false);

@@ -74,7 +74,17 @@ async function request(path, options = {}) {
       if (!res.ok) {
         const err = await res.json().catch(() => ({ detail: res.statusText }));
         const detail = err.detail;
-        const message = typeof detail === "string" ? detail : JSON.stringify(detail) || "API Error";
+        let message;
+        if (typeof detail === "string") {
+          message = detail;
+        } else if (Array.isArray(detail)) {
+          // FastAPI validation error: detail is an array of {loc, msg, type}
+          message = detail.map((d) => d.msg || d.message || JSON.stringify(d)).join(", ");
+        } else if (detail && typeof detail === "object") {
+          message = detail.message || detail.msg || "API Error";
+        } else {
+          message = "API Error";
+        }
         throw new Error(message || "API Error");
       }
 

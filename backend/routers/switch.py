@@ -51,7 +51,7 @@ async def connect_switch(
     except Exception as e:
         logger.error(f"Failed to connect Switch: {e}")
         raise HTTPException(
-            status_code=400, detail=f"連携に失敗しました: {str(e)}"
+            status_code=400, detail="Nintendo Account の認証に失敗しました。URLが正しいか、有効期限が切れていないか確認してください。"
         ) from e
 
 
@@ -84,7 +84,7 @@ async def switch_callback(
     except Exception as e:
         logger.error(f"Failed to connect Switch via callback: {e}")
         raise HTTPException(
-            status_code=400, detail=f"連携に失敗しました: {str(e)}"
+            status_code=400, detail="Nintendo Account の認証に失敗しました。コードが正しいか、有効期限が切れていないか確認してください。"
         ) from e
 
 
