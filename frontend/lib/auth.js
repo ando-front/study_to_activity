@@ -92,6 +92,30 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           }
           // DBに未登録の場合は ALLOWED_EMAILS でフォールバック
           if (allowedEmails.includes(user.email)) {
+            // Auto-register the user in the backend so backendId is available
+            try {
+              const regRes = await fetch(`${API_BASE}/auth/register`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: user.name || user.email, role: "parent", email: user.email }),
+                signal: AbortSignal.timeout(10000),
+              });
+              if (regRes.ok) {
+                const newUser = await regRes.json();
+                user.backendId = newUser.id;
+              } else if (regRes.status === 409) {
+                // Already registered (race condition) — fetch again to get id
+                const refetchRes = await fetch(`${API_BASE}/auth/users`, { signal: AbortSignal.timeout(10000) });
+                if (refetchRes.ok) {
+                  const allUsers = await refetchRes.json();
+                  const found = allUsers.find((u) => u.role === "parent" && u.email === user.email);
+                  if (found) user.backendId = found.id;
+                }
+              }
+            } catch (err) {
+              // Registration failed — user.backendId remains unset; dashboard will handle gracefully
+              console.error("Failed to auto-register Google OAuth user in backend:", err);
+            }
             user.role = "parent";
             return true;
           }

@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import logging
+import os
 import time
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import parse_qs, urlparse
 
 from pynintendoparental import Authenticator, NintendoParental
 
@@ -10,6 +11,16 @@ logger = logging.getLogger(__name__)
 
 # Pending auth sessions TTL (seconds)
 _PENDING_TTL = 600  # 10 minutes
+
+
+def _parse_kv_pairs(fragment: str) -> dict:
+    """Parse key=value pairs from a URL fragment or query string."""
+    params = {}
+    for part in fragment.split("&"):
+        if "=" in part:
+            k, v = part.split("=", 1)
+            params[k] = v
+    return params
 
 
 def _extract_session_token_code(input_str: str) -> str:
@@ -27,11 +38,7 @@ def _extract_session_token_code(input_str: str) -> str:
             parsed = urlparse(s)
             fragment = parsed.fragment or parsed.query
             if fragment:
-                params = {}
-                for part in fragment.split("&"):
-                    if "=" in part:
-                        k, v = part.split("=", 1)
-                        params[k] = v
+                params = _parse_kv_pairs(fragment)
                 if "session_token_code" in params:
                     return params["session_token_code"]
         except Exception:
@@ -39,11 +46,7 @@ def _extract_session_token_code(input_str: str) -> str:
 
     # Fragment / query string pasted directly
     if "session_token_code=" in s:
-        params = {}
-        for part in s.split("&"):
-            if "=" in part:
-                k, v = part.split("=", 1)
-                params[k] = v
+        params = _parse_kv_pairs(s)
         if "session_token_code" in params:
             return params["session_token_code"]
 
@@ -158,16 +161,19 @@ class SwitchService:
             ]
 
         auth = Authenticator(session_token=session_token)
-        api = NintendoParental(auth=auth)
-        await api.update()
+        api = await NintendoParental.create(
+            auth,
+            timezone=os.getenv("SWITCH_TIMEZONE", "Asia/Tokyo"),
+            lang=os.getenv("SWITCH_LANG", "ja-JP"),
+        )
 
         devices = []
-        for device in api.devices:
+        for device in api.devices.values():
             devices.append(
                 {
                     "device_id": device.device_id,
                     "name": device.name,
-                    "current_limit": device.daily_limit,
+                    "current_limit": device.limit_time,
                 }
             )
         return devices
@@ -183,12 +189,15 @@ class SwitchService:
             return True
 
         auth = Authenticator(session_token=session_token)
-        api = NintendoParental(auth=auth)
-        await api.update()
+        api = await NintendoParental.create(
+            auth,
+            timezone=os.getenv("SWITCH_TIMEZONE", "Asia/Tokyo"),
+            lang=os.getenv("SWITCH_LANG", "ja-JP"),
+        )
 
-        for device in api.devices:
+        for device in api.devices.values():
             if device.device_id == device_id:
-                await device.set_daily_limit(limit_minutes)
+                await device.update_max_daily_playtime(limit_minutes)
                 return True
         return False
 
