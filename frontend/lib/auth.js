@@ -112,8 +112,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                   if (found) user.backendId = found.id;
                 }
               }
-            } catch {
+            } catch (err) {
               // Registration failed — user.backendId remains unset; dashboard will handle gracefully
+              console.error("Failed to auto-register Google OAuth user in backend:", err);
             }
             user.role = "parent";
             return true;

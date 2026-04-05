@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import time
 from urllib.parse import parse_qs, urlparse
 
@@ -158,7 +159,11 @@ class SwitchService:
             ]
 
         auth = Authenticator(session_token=session_token)
-        api = await NintendoParental.create(auth, timezone="Asia/Tokyo", lang="ja-JP")
+        api = await NintendoParental.create(
+            auth,
+            timezone=os.getenv("SWITCH_TIMEZONE", "Asia/Tokyo"),
+            lang=os.getenv("SWITCH_LANG", "ja-JP"),
+        )
 
         devices = []
         for device in api.devices.values():
@@ -182,7 +187,11 @@ class SwitchService:
             return True
 
         auth = Authenticator(session_token=session_token)
-        api = await NintendoParental.create(auth, timezone="Asia/Tokyo", lang="ja-JP")
+        api = await NintendoParental.create(
+            auth,
+            timezone=os.getenv("SWITCH_TIMEZONE", "Asia/Tokyo"),
+            lang=os.getenv("SWITCH_LANG", "ja-JP"),
+        )
 
         for device in api.devices.values():
             if device.device_id == device_id:
