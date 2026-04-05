@@ -5,6 +5,7 @@ import os
 import time
 from urllib.parse import parse_qs, urlparse
 
+import aiohttp
 from pynintendoparental import Authenticator, NintendoParental
 
 logger = logging.getLogger(__name__)
@@ -71,7 +72,9 @@ class SwitchService:
     async def get_auth_url(self):
         """Generate the URL for Nintendo Account login."""
         self._cleanup_pending()
-        auth = Authenticator.generate_login()
+
+        async with aiohttp.ClientSession() as session:
+            auth = Authenticator(client_session=session)
 
         # Extract state from the generated login URL for session tracking
         parsed = urlparse(auth.login_url)
@@ -97,11 +100,13 @@ class SwitchService:
             verifier_to_use = self._pending[state]["verifier"]
 
         if not verifier_to_use:
-            raise RuntimeError("認証開始からやり直してください")
+            raise RuntimeError("認証セッションが見つかりません。認証開始からやり直してください。")
 
-        auth = Authenticator(auth_code_verifier=verifier_to_use)
-        auth = await Authenticator.complete_login(auth, response_url)
-        session_token = auth.get_session_token
+        async with aiohttp.ClientSession() as session:
+            auth = Authenticator(client_session=session)
+            auth._auth_code_verifier = verifier_to_use
+            await auth.async_complete_login(response_url)
+            session_token = auth.session_token
 
         if state and state in self._pending:
             self._pending[state]["session_token"] = session_token
@@ -122,12 +127,15 @@ class SwitchService:
             verifier_to_use = self._pending[state]["verifier"]
 
         if not verifier_to_use:
-            raise RuntimeError("認証開始からやり直してください")
+            raise RuntimeError("認証セッションが見つかりません。認証開始からやり直してください。")
 
-        auth = Authenticator(auth_code_verifier=verifier_to_use)
-        # Directly call perform_login — no need to reconstruct the full redirect URL
-        await auth.perform_login(code)
-        session_token = auth.get_session_token
+        async with aiohttp.ClientSession() as session:
+            auth = Authenticator(client_session=session)
+            auth._auth_code_verifier = verifier_to_use
+            # Build the full redirect URL that async_complete_login expects
+            redirect_url = f"npf54789befb391a838://auth#session_token_code={code}&state={state or ''}"
+            await auth.async_complete_login(redirect_url)
+            session_token = auth.session_token
 
         if state and state in self._pending:
             self._pending[state]["session_token"] = session_token
@@ -160,22 +168,24 @@ class SwitchService:
                 }
             ]
 
-        auth = Authenticator(session_token=session_token)
-        api = await NintendoParental.create(
-            auth,
-            timezone=os.getenv("SWITCH_TIMEZONE", "Asia/Tokyo"),
-            lang=os.getenv("SWITCH_LANG", "ja-JP"),
-        )
-
-        devices = []
-        for device in api.devices.values():
-            devices.append(
-                {
-                    "device_id": device.device_id,
-                    "name": device.name,
-                    "current_limit": device.limit_time,
-                }
+        async with aiohttp.ClientSession() as session:
+            auth = Authenticator(session_token=session_token, client_session=session)
+            await auth.async_complete_login(use_session_token=True)
+            api = await NintendoParental.create(
+                auth,
+                timezone=os.getenv("SWITCH_TIMEZONE", "Asia/Tokyo"),
+                lang=os.getenv("SWITCH_LANG", "ja-JP"),
             )
+
+            devices = []
+            for device in api.devices.values():
+                devices.append(
+                    {
+                        "device_id": device.device_id,
+                        "name": device.name,
+                        "current_limit": device.limit_time if device.limit_time not in (-1, None) else 0,
+                    }
+                )
         return devices
 
     async def update_device_limit(
@@ -188,18 +198,23 @@ class SwitchService:
             )
             return True
 
-        auth = Authenticator(session_token=session_token)
-        api = await NintendoParental.create(
-            auth,
-            timezone=os.getenv("SWITCH_TIMEZONE", "Asia/Tokyo"),
-            lang=os.getenv("SWITCH_LANG", "ja-JP"),
-        )
+        # Clamp to Nintendo's allowed range (0-360 minutes)
+        clamped = max(0, min(limit_minutes, 360))
 
-        for device in api.devices.values():
-            if device.device_id == device_id:
-                await device.update_max_daily_playtime(limit_minutes)
-                return True
-        return False
+        async with aiohttp.ClientSession() as session:
+            auth = Authenticator(session_token=session_token, client_session=session)
+            await auth.async_complete_login(use_session_token=True)
+            api = await NintendoParental.create(
+                auth,
+                timezone=os.getenv("SWITCH_TIMEZONE", "Asia/Tokyo"),
+                lang=os.getenv("SWITCH_LANG", "ja-JP"),
+            )
+
+            device = api.devices.get(device_id)
+            if device is None:
+                return False
+            await device.update_max_daily_playtime(clamped)
+        return True
 
 
 # Global instance

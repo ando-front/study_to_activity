@@ -35,7 +35,11 @@ def verify_pin(plain_pin: str | None, hashed_pin: str | None) -> bool:
 # --- Token Encryption (Fernet) ---
 ENCRYPTION_KEY = os.getenv("ENCRYPTION_KEY")
 if not ENCRYPTION_KEY:
-    ENCRYPTION_KEY = Fernet.generate_key().decode()
+    raise RuntimeError(
+        "ENCRYPTION_KEY 環境変数が設定されていません。"
+        "以下のコマンドで生成してください:\n"
+        "  python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\""
+    )
 fernet = Fernet(ENCRYPTION_KEY.encode())
 
 def encrypt_token(token: str) -> str:

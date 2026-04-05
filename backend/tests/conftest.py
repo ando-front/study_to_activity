@@ -1,4 +1,10 @@
+import os
 import pytest
+
+# テスト用の暗号化キーを設定（backend.security のインポート前に必要）
+if not os.getenv("ENCRYPTION_KEY"):
+    from cryptography.fernet import Fernet
+    os.environ["ENCRYPTION_KEY"] = Fernet.generate_key().decode()
 
 # 修正されたインポートパス
 from backend.database import Base, get_db

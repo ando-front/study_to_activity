@@ -2,6 +2,7 @@ import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
+from pynintendoauth.exceptions import InvalidSessionTokenException
 from sqlalchemy.orm import Session
 
 from backend.database import get_db
@@ -124,12 +125,18 @@ async def list_switch_devices(
         if not token:
             raise HTTPException(
                 status_code=400,
-                detail="連携情報が無効または期限切れです。再度 Nintendo Account の連携を行ってください。（サーバー再起動後に連携情報が失われることがあります）",
+                detail="連携情報が無効です。再度 Nintendo Account の連携を行ってください。",
             )
         devices = await switch_service.get_devices(token)
         return devices
     except HTTPException:
         raise
+    except InvalidSessionTokenException:
+        logger.warning(f"Invalid session token for user {user_id}")
+        raise HTTPException(
+            status_code=400,
+            detail="Nintendo のセッションが期限切れです。再度連携を行ってください。",
+        )
     except Exception as e:
         logger.error(f"Failed to list devices: {e}")
         raise HTTPException(
@@ -166,7 +173,7 @@ async def sync_balance_to_switch(
         if not token:
             raise HTTPException(
                 status_code=400,
-                detail="連携情報が無効または期限切れです。再度 Nintendo Account の連携を行ってください。（サーバー再起動後に連携情報が失われることがあります）",
+                detail="連携情報が無効です。再度 Nintendo Account の連携を行ってください。",
             )
         devices = await switch_service.get_devices(token)
         synced_names = []
@@ -180,8 +187,14 @@ async def sync_balance_to_switch(
         return {"message": f"{limit}分 を同期しました", "synced_devices": synced_names}
     except HTTPException:
         raise
+    except InvalidSessionTokenException:
+        logger.warning(f"Invalid session token for user {user_id}")
+        raise HTTPException(
+            status_code=400,
+            detail="Nintendo のセッションが期限切���です。再度連携を行っ���ください。",
+        )
     except Exception as e:
         logger.error(f"Failed to sync to Switch: {e}")
         raise HTTPException(
-            status_code=500, detail="Switch への同期に失敗しました"
+            status_code=500, detail="Switch への同期に失敗���ました"
         ) from e

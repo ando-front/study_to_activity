@@ -75,7 +75,14 @@ export default function NintendoCallbackPage() {
         setTimeout(() => router.push("/parent/dashboard"), 1500);
       })
       .catch((e) => {
-        const msg = e?.message || (typeof e === "object" ? JSON.stringify(e) : String(e));
+        let msg;
+        if (typeof e?.message === "string" && e.message.length > 0) {
+          msg = e.message;
+        } else if (typeof e === "string") {
+          msg = e;
+        } else {
+          msg = "Nintendo Account の認証に失敗しました。ダッシュボードから再度お試しください。";
+        }
         setErrorMsg(msg);
         setStatus("error");
       });

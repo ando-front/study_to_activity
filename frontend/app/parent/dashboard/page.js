@@ -132,7 +132,9 @@ export default function ParentDashboard() {
       // callback ページが使えるよう pending 情報を保存
       sessionStorage.setItem("s2a_switch_pending", JSON.stringify({ userId: user.id, verifier, state }));
       window.open(url, '_blank');
-    } catch (e) { showToast(e.message, "error"); }
+    } catch (e) {
+      showToast(e?.message || "Nintendo 認証URLの取得に失敗しました。しばらく待ってから再試���してください。", "error");
+    }
   };
 
   /** Nintendo Account 連携完了 */
@@ -174,8 +176,9 @@ export default function ParentDashboard() {
     try {
       const res = await switchApi.sync(user.id);
       showToast(`${res.synced_devices.join(", ")} へ同期完了！`);
-    } catch (e) { showToast(e.message, "error"); }
-    finally { setSyncing(false); }
+    } catch (e) {
+      showToast(e?.message || "Switch への同期に失敗しました", "error");
+    } finally { setSyncing(false); }
   };
 
   if (loading) return <div style={{ padding: 40, textAlign: "center", color: "var(--text-muted)" }}>読み込み中...</div>;
