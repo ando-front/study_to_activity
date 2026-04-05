@@ -91,6 +91,10 @@ export default function ParentDashboard() {
    * これにより親は承認 → 報酬付与のフローを一画面で完結できる。
    */
   const handleApprove = async (taskId) => {
+    if (!user?.id) {
+      showToast("ユーザー情報が取得できませんでした。再ログインしてください。", "error");
+      return;
+    }
     try {
       const res = await tasksApi.approve(taskId, user.id);
       const rewards = res.rewards_granted || [];
@@ -114,6 +118,10 @@ export default function ParentDashboard() {
 
   /** Nintendo Account 連携開始 */
   const startSwitchConnect = async () => {
+    if (!user?.id) {
+      showToast("ユーザー情報が取得できませんでした。再ログインしてください。", "error");
+      return;
+    }
     try {
       const { url, verifier, state } = await switchApi.getAuthUrl();
       setSwitchUrl(url);

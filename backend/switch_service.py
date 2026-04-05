@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import time
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import parse_qs, urlparse
 
 from pynintendoparental import Authenticator, NintendoParental
 
@@ -158,16 +158,15 @@ class SwitchService:
             ]
 
         auth = Authenticator(session_token=session_token)
-        api = NintendoParental(auth=auth)
-        await api.update()
+        api = await NintendoParental.create(auth, timezone="Asia/Tokyo", lang="ja-JP")
 
         devices = []
-        for device in api.devices:
+        for device in api.devices.values():
             devices.append(
                 {
                     "device_id": device.device_id,
                     "name": device.name,
-                    "current_limit": device.daily_limit,
+                    "current_limit": device.limit_time,
                 }
             )
         return devices
@@ -183,12 +182,11 @@ class SwitchService:
             return True
 
         auth = Authenticator(session_token=session_token)
-        api = NintendoParental(auth=auth)
-        await api.update()
+        api = await NintendoParental.create(auth, timezone="Asia/Tokyo", lang="ja-JP")
 
-        for device in api.devices:
+        for device in api.devices.values():
             if device.device_id == device_id:
-                await device.set_daily_limit(limit_minutes)
+                await device.update_max_daily_playtime(limit_minutes)
                 return True
         return False
 
