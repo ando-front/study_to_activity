@@ -78,8 +78,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           });
           clearTimeout(timeoutId);
           if (!res.ok) {
-            // バックエンドエラー時は ALLOWED_EMAILS でフォールバック
-            return allowedEmails.includes(user.email) || "/parent/login?error=BackendUnavailable";
+            // バックエンドがエラーを返した場合は再試行を促す
+            return "/parent/login?error=BackendUnavailable";
           }
           const users = await res.json();
           const matched = users.find(
@@ -113,8 +113,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 }
               }
             } catch (err) {
-              // Registration failed — user.backendId remains unset; dashboard will handle gracefully
+              // Registration failed — cannot allow login without backendId
               console.error("Failed to auto-register Google OAuth user in backend:", err);
+            }
+            if (!user.backendId) {
+              // backendId が取得できなかった場合はログインを拒否して再試行を促す
+              return "/parent/login?error=BackendUnavailable";
             }
             user.role = "parent";
             return true;
@@ -122,8 +126,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return false; // 未登録かつ ALLOWED_EMAILS にもない場合はアクセスを拒否
         } catch (err) {
           clearTimeout(timeoutId);
-          // タイムアウトまたはバックエンド接続不可 → ALLOWED_EMAILS でフォールバック
-          if (allowedEmails.includes(user.email)) return true;
+          // タイムアウトまたはバックエンド接続不可 → 再試行を促す
+          // (backendId なしでログインを許可するとダッシュボードが機能しないため)
           return "/parent/login?error=BackendUnavailable";
         }
       }
