@@ -13,6 +13,16 @@ logger = logging.getLogger(__name__)
 _PENDING_TTL = 600  # 10 minutes
 
 
+def _parse_kv_pairs(fragment: str) -> dict:
+    """Parse key=value pairs from a URL fragment or query string."""
+    params = {}
+    for part in fragment.split("&"):
+        if "=" in part:
+            k, v = part.split("=", 1)
+            params[k] = v
+    return params
+
+
 def _extract_session_token_code(input_str: str) -> str:
     """
     Extract session_token_code from either:
@@ -28,11 +38,7 @@ def _extract_session_token_code(input_str: str) -> str:
             parsed = urlparse(s)
             fragment = parsed.fragment or parsed.query
             if fragment:
-                params = {}
-                for part in fragment.split("&"):
-                    if "=" in part:
-                        k, v = part.split("=", 1)
-                        params[k] = v
+                params = _parse_kv_pairs(fragment)
                 if "session_token_code" in params:
                     return params["session_token_code"]
         except Exception:
@@ -40,11 +46,7 @@ def _extract_session_token_code(input_str: str) -> str:
 
     # Fragment / query string pasted directly
     if "session_token_code=" in s:
-        params = {}
-        for part in s.split("&"):
-            if "=" in part:
-                k, v = part.split("=", 1)
-                params[k] = v
+        params = _parse_kv_pairs(s)
         if "session_token_code" in params:
             return params["session_token_code"]
 
