@@ -126,6 +126,22 @@ export const authApi = {
 
   /** 指定 ID のユーザー情報を取得 */
   getUser: (id) => request(`/auth/users/${id}`),
+
+  /** 子供ユーザーを新規追加 */
+  createChild: (data) =>
+    request("/auth/users/children", { method: "POST", body: JSON.stringify(data) }),
+
+  /** 子供ユーザーの情報を更新 */
+  updateChild: (childId, data) =>
+    request(`/auth/users/children/${childId}`, { method: "PUT", body: JSON.stringify(data) }),
+
+  /** 子供ユーザーを削除 */
+  deleteChild: (childId) =>
+    request(`/auth/users/children/${childId}`, { method: "DELETE" }),
+
+  /** 親ユーザーのプロフィールを更新 */
+  updateProfile: (userId, data) =>
+    request(`/auth/users/profile?user_id=${userId}`, { method: "PUT", body: JSON.stringify(data) }),
 };
 
 // ---------------------------------------------------------------------------

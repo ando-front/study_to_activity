@@ -175,10 +175,18 @@ export default function ParentDashboard() {
     setSyncing(true);
     try {
       const res = await switchApi.sync(user.id);
-      showToast(`${res.synced_devices.join(", ")} へ同期完了！`);
+      const devices = res.synced_devices || [];
+      if (devices.length > 0) {
+        showToast(`${devices.join(", ")} へ ${res.message || "同期完了！"}`);
+      } else {
+        showToast("同期対象のデバイスが見つかりませんでした。デバイスの電源が入っているか確認してください。", "error");
+      }
     } catch (e) {
-      showToast(e?.message || "Switch への同期に失敗しました", "error");
-    } finally { setSyncing(false); }
+      const msg = e?.message || "同期に失敗しました。しばらく待ってから再試行してください。";
+      showToast(msg, "error");
+    } finally {
+      setSyncing(false);
+    }
   };
 
   if (loading) return <div style={{ padding: 40, textAlign: "center", color: "var(--text-muted)" }}>読み込み中...</div>;
@@ -195,6 +203,7 @@ export default function ParentDashboard() {
             <a href="/parent/schedule">週間予定</a>
             <a href="/parent/rules">ルール</a>
             <a href="/parent/wallet">ウォレット</a>
+            <a href="/parent/settings">設定</a>
             <a data-testid="logout-link" href="/" onClick={async (e) => { e.preventDefault(); localStorage.removeItem("s2a_user"); await signOut({ callbackUrl: "/" }); }}>ログアウト</a>
           </div>
         </div>
@@ -234,7 +243,9 @@ export default function ParentDashboard() {
           </h2>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <p style={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>
-              {user?.is_nintendo_linked ? "連携済みです" : "アカウントを連携して、みまもり設定を自動更新しましょう"}
+              {user?.is_nintendo_linked
+                ? "連携済み — 同期するとウォレット残高（上限: 1日の制限時間）がSwitchの「1日にあそぶ時間」に反映されます"
+                : "アカウントを連携して、みまもり設定を自動更新しましょう"}
             </p>
             <div style={{ display: "flex", gap: 8 }}>
               {user?.is_nintendo_linked ? (

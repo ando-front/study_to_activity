@@ -26,6 +26,17 @@ class UserOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    pin: Optional[str] = None
+    email: Optional[str] = None
+
+
+class ChildCreate(BaseModel):
+    name: str
+    pin: Optional[str] = None
+
+
 class LoginRequest(BaseModel):
     user_id: int
     pin: Optional[str] = None
