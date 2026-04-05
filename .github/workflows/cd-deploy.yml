@@ -5,7 +5,15 @@ on:
     types: [submitted]
 
 jobs:
+  # This job always succeeds so the workflow never shows as "failure"
+  # when triggered by a push event (where the deploy job is intentionally skipped).
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "CD gate ok"
+
   deploy:
+    needs: gate
     # Only run when a review is approved
     if: github.event.review.state == 'approved'
     runs-on: ubuntu-latest
