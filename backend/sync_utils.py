@@ -44,12 +44,17 @@ async def trigger_switch_sync(db: Session, child_id: int):
         limit = min(balance, child.wallet.daily_limit_minutes)
 
         logger.info(
-            f"Starting background sync for child {child_id} (balance: {balance}, limit: {limit}m)"
+            f"Starting background sync for child {child_id} (balance: {balance}m, daily_limit: {child.wallet.daily_limit_minutes}m, sending: {limit}m)"
         )
 
         token = parent.get_nintendo_token()
         devices = await switch_service.get_devices(token)
+        if not devices:
+            logger.warning(f"Sync skipped: No Switch devices found for child {child_id}")
+            return
+
         for dev in devices:
+            logger.info(f"Syncing {limit}m to Switch device: {dev['name']} (id={dev['device_id']}, current_limit={dev.get('current_limit')}m)")
             success = await switch_service.update_device_limit(
                 token, dev["device_id"], limit
             )
@@ -58,7 +63,7 @@ async def trigger_switch_sync(db: Session, child_id: int):
                     f"Successfully synced {limit}m to Switch device: {dev['name']}"
                 )
             else:
-                logger.error(f"Failed to sync to Switch device: {dev['name']}")
+                logger.error(f"Failed to sync to Switch device: {dev['name']} — device not found in API response")
 
     except Exception as e:
         logger.error(f"Error in trigger_switch_sync: {e}")

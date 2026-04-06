@@ -200,6 +200,9 @@ class SwitchService:
 
         # Clamp to Nintendo's allowed range (0-360 minutes)
         clamped = max(0, min(limit_minutes, 360))
+        logger.info(
+            f"update_device_limit: device={device_id} requested={limit_minutes}m clamped={clamped}m"
+        )
 
         async with aiohttp.ClientSession() as session:
             auth = Authenticator(session_token=session_token, client_session=session)
@@ -212,8 +215,12 @@ class SwitchService:
 
             device = api.devices.get(device_id)
             if device is None:
+                logger.error(f"update_device_limit: device {device_id} not found in api.devices (available: {list(api.devices.keys())})")
                 return False
+            limit_before = device.limit_time
+            logger.info(f"update_device_limit: [{device.name}] limit_before={limit_before}m timer_mode={device.timer_mode}")
             await device.update_max_daily_playtime(clamped)
+            logger.info(f"update_device_limit: [{device.name}] limit_after={device.limit_time}m (sent={clamped}m)")
         return True
 
 

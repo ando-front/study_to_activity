@@ -176,6 +176,10 @@ async def sync_balance_to_switch(
                 detail="連携情報が無効です。再度 Nintendo Account の連携を行ってください。",
             )
         devices = await switch_service.get_devices(token)
+        logger.info(f"sync_balance_to_switch: user={user_id} limit={limit}m devices={[d['name'] for d in devices]}")
+        if not devices:
+            raise HTTPException(status_code=400, detail="連携済みのSwitchデバイスが見つかりません")
+
         synced_names = []
         for dev in devices:
             success = await switch_service.update_device_limit(
@@ -183,6 +187,9 @@ async def sync_balance_to_switch(
             )
             if success:
                 synced_names.append(dev["name"])
+
+        if not synced_names:
+            raise HTTPException(status_code=500, detail="Switchデバイスへの同期に失敗しました（デバイスが見つかりませんでした）")
 
         return {"message": f"{limit}分 を同期しました", "synced_devices": synced_names}
     except HTTPException:

@@ -175,7 +175,11 @@ export default function ParentDashboard() {
     setSyncing(true);
     try {
       const res = await switchApi.sync(user.id);
-      showToast(`${res.synced_devices.join(", ")} へ同期完了！`);
+      if (!res.synced_devices || res.synced_devices.length === 0) {
+        showToast("同期できたデバイスがありません", "error");
+      } else {
+        showToast(`${res.synced_devices.join(", ")} へ同期完了！`);
+      }
     } catch (e) {
       showToast(e?.message || "Switch への同期に失敗しました", "error");
     } finally { setSyncing(false); }
