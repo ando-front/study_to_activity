@@ -1,14 +1,14 @@
 """Authentication router - simple PIN-based auth for family use."""
 
-from typing import Annotated
+from typing import Annotated, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from backend.database import get_db
 from backend.models import ActivityWallet, User, UserRole
-from backend.schemas import ChildCreate, LoginRequest, LoginResponse, UserCreate, UserOut, UserUpdate
+from backend.schemas import ChildCreate, ChildUpdate, LoginRequest, LoginResponse, UserCreate, UserOut, UserUpdate
 from backend.security import hash_pin, verify_pin
 
 router = APIRouter()
@@ -26,6 +26,9 @@ def register_user(data: UserCreate, db: Annotated[Session, Depends(get_db)]):
         role=UserRole(data.role),
         pin=hash_pin(data.pin),
         email=email,
+        parent_id=data.parent_id,
+        age=data.age,
+        daily_game_limit_minutes=data.daily_game_limit_minutes,
     )
     db.add(user)
 
@@ -40,7 +43,11 @@ def register_user(data: UserCreate, db: Annotated[Session, Depends(get_db)]):
 
     # Auto-create wallet for child users
     if user.role == UserRole.CHILD:
-        wallet = ActivityWallet(child_id=user.id, balance_minutes=0)
+        wallet = ActivityWallet(
+            child_id=user.id,
+            balance_minutes=0,
+            daily_limit_minutes=data.daily_game_limit_minutes or 60,
+        )
         db.add(wallet)
 
     db.commit()
@@ -76,7 +83,19 @@ def get_user(user_id: int, db: Annotated[Session, Depends(get_db)]):
     return user
 
 
-# --- User Management (children CRUD + parent profile) ---
+# --- Child Management ---
+
+
+@router.get("/children", response_model=list[UserOut])
+def list_children(
+    db: Annotated[Session, Depends(get_db)],
+    parent_id: Optional[int] = Query(None, description="Filter by parent ID"),
+):
+    """List child users, optionally filtered by parent."""
+    q = db.query(User).filter(User.role == UserRole.CHILD)
+    if parent_id is not None:
+        q = q.filter(User.parent_id == parent_id)
+    return q.all()
 
 
 @router.post("/users/children", response_model=UserOut)
@@ -97,11 +116,13 @@ def create_child(data: ChildCreate, db: Annotated[Session, Depends(get_db)]):
     return child
 
 
-@router.put("/users/children/{child_id}", response_model=UserOut)
+@router.patch("/children/{child_id}", response_model=UserOut)
 def update_child(
-    child_id: int, data: UserUpdate, db: Annotated[Session, Depends(get_db)]
+    child_id: int,
+    data: ChildUpdate,
+    db: Annotated[Session, Depends(get_db)],
 ):
-    """Edit a child user's name or PIN."""
+    """Update a child user's profile."""
     child = (
         db.query(User)
         .filter(User.id == child_id, User.role == UserRole.CHILD)
@@ -112,6 +133,18 @@ def update_child(
 
     if data.name is not None:
         child.name = data.name
+    if data.age is not None:
+        child.age = data.age
+    if data.daily_game_limit_minutes is not None:
+        child.daily_game_limit_minutes = data.daily_game_limit_minutes
+        # Also update wallet daily limit
+        wallet = (
+            db.query(ActivityWallet)
+            .filter(ActivityWallet.child_id == child_id)
+            .first()
+        )
+        if wallet:
+            wallet.daily_limit_minutes = data.daily_game_limit_minutes
     if data.pin is not None:
         child.pin = hash_pin(data.pin)
 
@@ -120,9 +153,9 @@ def update_child(
     return child
 
 
-@router.delete("/users/children/{child_id}")
+@router.delete("/children/{child_id}")
 def delete_child(child_id: int, db: Annotated[Session, Depends(get_db)]):
-    """Delete a child user and their wallet."""
+    """Delete a child user and associated data."""
     child = (
         db.query(User)
         .filter(User.id == child_id, User.role == UserRole.CHILD)
@@ -131,13 +164,20 @@ def delete_child(child_id: int, db: Annotated[Session, Depends(get_db)]):
     if not child:
         raise HTTPException(status_code=404, detail="子供ユーザーが見つかりません")
 
-    # Delete wallet first
-    if child.wallet:
-        db.delete(child.wallet)
+    # Delete associated data
+    from backend.models import ActivityLog, RewardLog, StudyPlan, StudyTask
 
+    plans = db.query(StudyPlan).filter(StudyPlan.child_id == child_id).all()
+    for plan in plans:
+        db.query(StudyTask).filter(StudyTask.plan_id == plan.id).delete()
+    db.query(StudyPlan).filter(StudyPlan.child_id == child_id).delete()
+    db.query(ActivityLog).filter(ActivityLog.child_id == child_id).delete()
+    db.query(RewardLog).filter(RewardLog.child_id == child_id).delete()
+    db.query(ActivityWallet).filter(ActivityWallet.child_id == child_id).delete()
     db.delete(child)
     db.commit()
-    return {"message": f"{child.name} を削除しました"}
+
+    return {"message": f"子供ユーザー（{child.name}）を削除しました"}
 
 
 @router.put("/users/profile", response_model=UserOut)
@@ -169,5 +209,26 @@ def update_profile(
             detail="このメールアドレスは既に登録されています",
         ) from None
 
+    db.refresh(user)
+    return user
+
+
+@router.patch("/users/{user_id}/line-notify", response_model=UserOut)
+def update_line_notify_token(
+    user_id: int,
+    token: str = Query(..., description="LINE Notify token"),
+    db: Session = Depends(get_db),
+):
+    """Set LINE Notify token for a parent user."""
+    user = (
+        db.query(User)
+        .filter(User.id == user_id, User.role == UserRole.PARENT)
+        .first()
+    )
+    if not user:
+        raise HTTPException(status_code=404, detail="親ユーザーが見つかりません")
+
+    user.line_notify_token = token
+    db.commit()
     db.refresh(user)
     return user

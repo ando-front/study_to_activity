@@ -53,6 +53,10 @@ def ensure_schema_compatibility():
             connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS email VARCHAR(255)"))
             connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS nintendo_session_token TEXT"))
             connection.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_email ON users (email)"))
+            connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS parent_id INTEGER REFERENCES users(id)"))
+            connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS age INTEGER"))
+            connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS daily_game_limit_minutes INTEGER DEFAULT 60"))
+            connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS line_notify_token VARCHAR(255)"))
     except SQLAlchemyError as exc:
         # Column type is already compatible, or a non-fatal DB error occurred.
         # Log and continue rather than crashing the application on startup.

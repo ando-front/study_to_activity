@@ -12,7 +12,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { tasksApi, plansApi } from "@/lib/api";
+import { tasksApi, plansApi, notifyApi } from "@/lib/api";
 
 export default function ChildDashboard() {
   const router = useRouter();
@@ -26,6 +26,8 @@ export default function ChildDashboard() {
   const [planDate, setPlanDate] = useState(new Date().toISOString().split("T")[0]);
   const [title, setTitle] = useState("");
   const [tasksForm, setTasksForm] = useState([{ subject: "", estimated_minutes: 30, is_homework: false, description: "" }]);
+  const [gameTimeWarning, setGameTimeWarning] = useState(false);
+  const [gameTimedOut, setGameTimedOut] = useState(false);
 
   /**
    * 認証チェック: localStorage にユーザー情報がなければトップへリダイレクト。
@@ -55,7 +57,26 @@ export default function ChildDashboard() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   /**
-   * トースト通知を表示し、3 秒後に自動消去する。
+   * ゲーム時間監視: 残り時間に応じて警告・タイムアウトを表示する。
+   * 残り5分で警告、0分でタイムアウト画面 + 親に通知。
+   */
+  useEffect(() => {
+    if (!dash || !user) return;
+    const remaining = (dash.daily_limit || 120) - (dash.today_consumed || 0);
+
+    if (remaining <= 0 && !gameTimedOut) {
+      setGameTimedOut(true);
+      setGameTimeWarning(false);
+      notifyApi.gameTimeout(user.id).catch(() => {});
+    } else if (remaining <= 5 && remaining > 0 && !gameTimeWarning) {
+      setGameTimeWarning(true);
+    } else if (remaining > 5) {
+      setGameTimeWarning(false);
+      setGameTimedOut(false);
+    }
+  }, [dash, user, gameTimedOut, gameTimeWarning]);
+
+  /**
    * @param {string} msg - 表示するメッセージ
    * @param {"success"|"error"} type - トーストのスタイル
    */
@@ -133,6 +154,8 @@ export default function ChildDashboard() {
         <div className="nav-inner">
           <div className="nav-brand">📚 <span>{user?.name}のページ</span></div>
           <div className="nav-links">
+            <a href="/child/dashboard" className="active">ホーム</a>
+            <a href="/child/history">きろく</a>
             <a data-testid="logout-link" href="/" onClick={(e) => { e.preventDefault(); localStorage.removeItem("s2a_user"); router.push("/"); }}>ログアウト</a>
           </div>
         </div>
@@ -231,6 +254,44 @@ export default function ChildDashboard() {
           </div>
         )}
       </div>
+
+      {/* ===== ゲーム時間警告 ===== */}
+      {gameTimeWarning && !gameTimedOut && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0,
+          background: "linear-gradient(135deg, #ff9800, #f44336)",
+          color: "#fff", padding: "12px 20px", textAlign: "center",
+          fontSize: "1rem", fontWeight: 700, zIndex: 1000,
+          animation: "pulse 1.5s infinite",
+        }}>
+          ⚠️ ゲーム時間が残り{Math.max(0, (dash?.daily_limit || 120) - (dash?.today_consumed || 0))}分です！
+        </div>
+      )}
+
+      {/* ===== ゲームタイムアウト画面 ===== */}
+      {gameTimedOut && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+          background: "rgba(0,0,0,0.85)", display: "flex",
+          flexDirection: "column", alignItems: "center", justifyContent: "center",
+          zIndex: 2000, color: "#fff",
+        }}>
+          <div style={{ fontSize: "4rem", marginBottom: 20 }}>⏰</div>
+          <h1 style={{ fontSize: "2rem", marginBottom: 10, color: "#fff" }}>
+            ゲーム時間がおわりました
+          </h1>
+          <p style={{ fontSize: "1.1rem", opacity: 0.8, marginBottom: 30 }}>
+            また明日、がくしゅうをがんばろう！
+          </p>
+          <button
+            className="btn btn-primary"
+            style={{ padding: "12px 32px", fontSize: "1rem" }}
+            onClick={() => setGameTimedOut(false)}
+          >
+            わかった
+          </button>
+        </div>
+      )}
 
       {/* ===== トースト通知 ===== */}
       {toast && <div className={`toast toast-${toast.type}`}>{toast.msg}</div>}

@@ -199,7 +199,9 @@ export default function ParentDashboard() {
           <div className="nav-brand">🏠 S2A 管理</div>
           <div className="nav-links">
             <a href="/parent/dashboard" className="active">ホーム</a>
+            <a href="/parent/children">子ども管理</a>
             <a href="/parent/plans">計画</a>
+            <a href="/parent/history">学習履歴</a>
             <a href="/parent/schedule">週間予定</a>
             <a href="/parent/rules">ルール</a>
             <a href="/parent/wallet">ウォレット</a>
@@ -235,6 +237,51 @@ export default function ParentDashboard() {
             <div className="stat-label">有効ルール</div>
           </div>
         </div>
+
+        {/* ===== ゲーム時間サマリー ===== */}
+        {dash?.game_time_summaries && dash.game_time_summaries.length > 0 && (
+          <div className="card animate-in-delay" style={{ marginBottom: 24 }}>
+            <h2 style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
+              🎮 今日のゲーム時間
+            </h2>
+            <div className="grid-2">
+              {dash.game_time_summaries.map((s) => (
+                <div key={s.child.id} style={{ padding: 16, border: "1px solid var(--border)", borderRadius: "var(--radius-sm)" }}>
+                  <div style={{ fontWeight: 600, marginBottom: 10 }}>{s.child.name}</div>
+                  <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                    <div style={{ flex: 1, textAlign: "center", padding: "8px 0" }}>
+                      <div style={{ fontSize: "1.3rem", fontWeight: 700, color: "var(--accent-success)" }}>+{s.today_earned}分</div>
+                      <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>学習で獲得</div>
+                    </div>
+                    <div style={{ flex: 1, textAlign: "center", padding: "8px 0" }}>
+                      <div style={{ fontSize: "1.3rem", fontWeight: 700, color: "var(--accent-danger)" }}>{s.today_consumed}分</div>
+                      <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>プレイ済み</div>
+                    </div>
+                    <div style={{ flex: 1, textAlign: "center", padding: "8px 0" }}>
+                      <div style={{ fontSize: "1.3rem", fontWeight: 700, color: "var(--primary)" }}>{s.wallet_balance}分</div>
+                      <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>残高</div>
+                    </div>
+                  </div>
+                  <div style={{ marginTop: 8 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: 4 }}>
+                      <span>プレイ時間</span>
+                      <span>{s.today_consumed} / {s.daily_game_limit}分</span>
+                    </div>
+                    <div style={{ background: "var(--bg-secondary)", borderRadius: 4, height: 8, overflow: "hidden" }}>
+                      <div style={{
+                        width: `${Math.min(100, (s.today_consumed / (s.daily_game_limit || 1)) * 100)}%`,
+                        height: "100%",
+                        background: s.today_consumed >= s.daily_game_limit ? "var(--accent-danger)" : "var(--accent-success)",
+                        borderRadius: 4,
+                        transition: "width 0.3s",
+                      }} />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ===== デバイス連携 (Switch) ===== */}
         <div className="card animate-in-delay" style={{ marginBottom: 24, background: "linear-gradient(135deg, #e60012, #ff4b2b)", color: "#fff" }}>

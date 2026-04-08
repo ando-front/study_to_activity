@@ -92,6 +92,39 @@ def get_child_dashboard_data(db: Session, child_id: int):
     }
 
 
+def get_child_game_time_summary(db: Session, child: User) -> dict:
+    """Get game time summary for a single child."""
+    today = date.today()
+
+    wallet = (
+        db.query(ActivityWallet).filter(ActivityWallet.child_id == child.id).first()
+    )
+    balance = wallet.balance_minutes if wallet else 0
+    daily_limit = wallet.daily_limit_minutes if wallet else 120
+
+    reward_logs = (
+        db.query(RewardLog)
+        .filter(RewardLog.child_id == child.id, RewardLog.granted_date == today)
+        .all()
+    )
+    today_earned = sum(r.granted_minutes for r in reward_logs)
+
+    activity_logs = db.query(ActivityLog).filter(ActivityLog.child_id == child.id).all()
+    today_consumed = sum(
+        log.consumed_minutes
+        for log in activity_logs
+        if log.created_at and log.created_at.date() == today
+    )
+
+    return {
+        "child": child,
+        "daily_game_limit": daily_limit,
+        "today_earned": today_earned,
+        "today_consumed": today_consumed,
+        "wallet_balance": balance,
+    }
+
+
 def get_parent_dashboard_data(db: Session):
     """
     Get all data required for the parent's dashboard.
@@ -118,9 +151,14 @@ def get_parent_dashboard_data(db: Session):
 
     active_rules = db.query(RewardRule).filter(RewardRule.is_active).all()
 
+    game_time_summaries = [
+        get_child_game_time_summary(db, child) for child in children
+    ]
+
     return {
         "children": children,
         "pending_approvals": pending_tasks,
         "today_plans": today_plans,
         "active_rules": active_rules,
+        "game_time_summaries": game_time_summaries,
     }

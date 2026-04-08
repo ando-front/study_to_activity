@@ -317,6 +317,72 @@ function switchHeaders() {
   return key ? { "X-API-Key": key } : {};
 }
 
+// ---------------------------------------------------------------------------
+// 子供管理 API
+// ---------------------------------------------------------------------------
+
+/** 子供ユーザーの CRUD を行うエンドポイント */
+export const childrenApi = {
+  /** 子供一覧を取得（parent_id でフィルタ可能） */
+  list: (parentId) => {
+    const q = parentId ? `?parent_id=${parentId}` : "";
+    return request(`/auth/children${q}`);
+  },
+
+  /** 子供を新規登録する */
+  create: (data) =>
+    request("/auth/register", { method: "POST", body: JSON.stringify(data) }),
+
+  /** 子供の情報を更新する */
+  update: (childId, data) =>
+    request(`/auth/children/${childId}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+
+  /** 子供を削除する */
+  delete: (childId) =>
+    request(`/auth/children/${childId}`, { method: "DELETE" }),
+};
+
+// ---------------------------------------------------------------------------
+// 学習履歴 API
+// ---------------------------------------------------------------------------
+
+/** 学習履歴の取得 */
+export const historyApi = {
+  /** 子供の学習履歴を取得する */
+  get: (childId, params = {}) => {
+    const q = new URLSearchParams();
+    if (params.date_from) q.set("date_from", params.date_from);
+    if (params.date_to) q.set("date_to", params.date_to);
+    if (params.limit) q.set("limit", params.limit);
+    const qs = q.toString();
+    return request(`/history/${childId}${qs ? `?${qs}` : ""}`);
+  },
+};
+
+// ---------------------------------------------------------------------------
+// 通知 API
+// ---------------------------------------------------------------------------
+
+/** 通知関連のエンドポイント */
+export const notifyApi = {
+  /** ゲーム時間終了通知を送信する */
+  gameTimeout: (childId) =>
+    request(`/notify/game-timeout/${childId}`, { method: "POST" }),
+
+  /** LINE Notify トークンを設定する */
+  setLineToken: (userId, token) =>
+    request(`/auth/users/${userId}/line-notify?token=${encodeURIComponent(token)}`, {
+      method: "PATCH",
+    }),
+};
+
+// ---------------------------------------------------------------------------
+// Switch 連携 API
+// ---------------------------------------------------------------------------
+
 export const switchApi = {
   /** 連携開始用の URL を取得 */
   getAuthUrl: () => request("/switch/auth-url", { headers: switchHeaders() }),

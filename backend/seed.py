@@ -16,8 +16,16 @@ def seed():
 
         parent = User(name="お父さん", role=UserRole.PARENT, pin=hash_pin("1234"), email="angie07.inet@gmail.com")
         db.add(parent)
+        db.flush()
 
-        child = User(name="たろう", role=UserRole.CHILD, pin=hash_pin("0000"))
+        child = User(
+            name="たろう",
+            role=UserRole.CHILD,
+            pin=hash_pin("0000"),
+            parent_id=parent.id,
+            age=8,
+            daily_game_limit_minutes=60,
+        )
         db.add(child)
         db.flush()
 
