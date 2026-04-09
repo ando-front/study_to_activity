@@ -149,8 +149,8 @@ async def sync_balance_to_switch(
     user_id: int, db: Annotated[Session, Depends(get_db)]
 ):
     """Sync the child's wallet balance to all linked Switch devices."""
-    # Note: In a real app, we might need a mapping between child user and Switch device
-    # For now, we'll sync the first CHILD's balance to all devices of the parent's account
+    from backend.sync_utils import _calculate_switch_limit
+
     parent = (
         db.query(User).filter(User.id == user_id, User.role == UserRole.PARENT).first()
     )
@@ -164,9 +164,7 @@ async def sync_balance_to_switch(
     if not child or not child.wallet:
         raise HTTPException(status_code=404, detail="子供のウォレットが見つかりません")
 
-    balance = child.wallet.balance_minutes
-    # Switch daily limit is capped at balanced or daily_limit_minutes
-    limit = min(balance, child.wallet.daily_limit_minutes)
+    limit = _calculate_switch_limit(db, child.id, child.wallet)
 
     try:
         token = parent.get_nintendo_token()
@@ -177,12 +175,21 @@ async def sync_balance_to_switch(
             )
         devices = await switch_service.get_devices(token)
         synced_names = []
+        failed_names = []
         for dev in devices:
             success = await switch_service.update_device_limit(
                 token, dev["device_id"], limit
             )
             if success:
                 synced_names.append(dev["name"])
+            else:
+                failed_names.append(dev["name"])
+
+        if not synced_names and devices:
+            raise HTTPException(
+                status_code=500,
+                detail=f"デバイスの更新に失敗しました: {', '.join(failed_names)}",
+            )
 
         return {"message": f"{limit}分 を同期しました", "synced_devices": synced_names}
     except HTTPException:
