@@ -1,5 +1,74 @@
+import pytest
 from datetime import date
 from unittest.mock import AsyncMock, patch
+
+from backend.sync_utils import trigger_switch_sync
+
+
+@pytest.mark.asyncio
+async def test_sync_skips_gracefully_when_parent_has_no_nintendo_token(db_session):
+    """
+    親ユーザーが Nintendo トークンを持っていない場合、
+    trigger_switch_sync が例外を発生させずにスキップすること。
+
+    修正前のバグ: `User.nintendo_session_token is not None` は常に True と評価され
+    トークン未設定の親が返り、decrypt_token(None) で例外が発生していた。
+    """
+    from backend.models import ActivityWallet, StudyPlan, StudyTask, TaskStatus, User, UserRole
+    from datetime import date as dt_date
+
+    # 親ユーザーを作成 (Nintendo トークンなし)
+    parent = User(name="Parent No Token", role=UserRole.PARENT)
+    parent.pin = "hashed"
+    db_session.add(parent)
+
+    # 子ユーザーとウォレットを作成
+    child = User(name="Child", role=UserRole.CHILD)
+    child.pin = "hashed"
+    db_session.add(child)
+    db_session.flush()
+
+    wallet = ActivityWallet(child_id=child.id, balance_minutes=30, daily_limit_minutes=120)
+    db_session.add(wallet)
+    db_session.commit()
+
+    # Nintendo トークン未設定の状態で同期を呼び出しても例外が出ないこと
+    await trigger_switch_sync(db_session, child.id)
+
+    # ウォレット残高は変化しないこと
+    db_session.refresh(wallet)
+    assert wallet.balance_minutes == 30
+
+
+@pytest.mark.asyncio
+async def test_sync_skips_when_no_parent_with_token_exists(db_session):
+    """
+    Nintendo トークンを持つ親が一人もいない場合、同期がスキップされること。
+    修正した IS NOT NULL フィルターが正しく機能するかを確認する。
+    """
+    from backend.models import ActivityWallet, User, UserRole
+
+    # トークンなしの親と子を作成
+    parent = User(name="Parent", role=UserRole.PARENT)
+    parent.pin = "hashed"
+    parent.nintendo_session_token = None  # 明示的に None
+    db_session.add(parent)
+
+    child = User(name="Child", role=UserRole.CHILD)
+    child.pin = "hashed"
+    db_session.add(child)
+    db_session.flush()
+
+    wallet = ActivityWallet(child_id=child.id, balance_minutes=60, daily_limit_minutes=120)
+    db_session.add(wallet)
+    db_session.commit()
+
+    # 例外なくスキップされること
+    await trigger_switch_sync(db_session, child.id)
+
+    # ウォレット残高は変化しない
+    db_session.refresh(wallet)
+    assert wallet.balance_minutes == 60
 
 
 def test_approve_task_triggers_background_sync(client):

@@ -1,6 +1,8 @@
 """Reward engine: evaluates rules and grants activity time."""
 
-from datetime import UTC, date, datetime
+from datetime import date, datetime, timezone
+
+UTC = timezone.utc
 
 from sqlalchemy.orm import Session
 
