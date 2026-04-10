@@ -8,7 +8,14 @@ from sqlalchemy.orm import Session
 
 from backend.database import get_db
 from backend.models import ActivityWallet, User, UserRole
-from backend.schemas import ChildCreate, LoginRequest, LoginResponse, UserCreate, UserOut, UserUpdate
+from backend.schemas import (
+    ChildCreate,
+    LoginRequest,
+    LoginResponse,
+    UserCreate,
+    UserOut,
+    UserUpdate,
+)
 from backend.security import hash_pin, verify_pin
 
 router = APIRouter()
