@@ -8,7 +8,15 @@ from sqlalchemy.orm import Session
 
 from backend.database import get_db
 from backend.models import ActivityWallet, User, UserRole
-from backend.schemas import ChildCreate, ChildUpdate, LoginRequest, LoginResponse, UserCreate, UserOut, UserUpdate
+from backend.schemas import (
+    ChildCreate,
+    ChildUpdate,
+    LoginRequest,
+    LoginResponse,
+    UserCreate,
+    UserOut,
+    UserUpdate,
+)
 from backend.security import hash_pin, verify_pin
 
 router = APIRouter()
@@ -217,7 +225,7 @@ def update_profile(
 def update_line_notify_token(
     user_id: int,
     token: str = Query(..., description="LINE Notify token"),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db),  # noqa: B008
 ):
     """Set LINE Notify token for a parent user."""
     user = (

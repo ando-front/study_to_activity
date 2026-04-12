@@ -1,7 +1,6 @@
 """LINE Notify integration for sending notifications to parents."""
 
 import logging
-import os
 
 import httpx
 

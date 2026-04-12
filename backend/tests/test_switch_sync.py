@@ -84,7 +84,7 @@ def test_sync_endpoint_error_when_no_devices_updated(client):
         json={"name": "SyncParent", "role": "parent", "pin": "1234"},
     )
     parent_id = parent_resp.json()["id"]
-    child_resp = client.post(
+    client.post(
         "/api/auth/register",
         json={"name": "SyncChild", "role": "child", "pin": "1234"},
     )

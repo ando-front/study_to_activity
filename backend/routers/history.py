@@ -14,12 +14,12 @@ router = APIRouter()
 
 
 @router.get("/{child_id}", response_model=StudyHistoryResponse)
-def get_study_history(
+def get_study_history(  # noqa: C901
     child_id: int,
     db: Annotated[Session, Depends(get_db)],
-    date_from: Optional[date] = Query(None, description="Start date filter"),
-    date_to: Optional[date] = Query(None, description="End date filter"),
-    limit: int = Query(50, ge=1, le=200),
+    date_from: Optional[date] = Query(None, description="Start date filter"),  # noqa: B008
+    date_to: Optional[date] = Query(None, description="End date filter"),  # noqa: B008
+    limit: int = Query(50, ge=1, le=200),  # noqa: B008
 ):
     """Get study history for a child."""
     child = (
@@ -53,7 +53,7 @@ def get_study_history(
     reward_map = {}
     if results:
         task_dates = set()
-        for task, plan in results:
+        for task, _ in results:
             if task.status == TaskStatus.APPROVED and task.approved_at:
                 task_dates.add(task.approved_at.date())
 

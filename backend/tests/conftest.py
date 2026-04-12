@@ -1,4 +1,5 @@
 import os
+
 import pytest
 
 # テスト用の暗号化キーを設定（backend.security のインポート前に必要）

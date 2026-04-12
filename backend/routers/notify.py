@@ -41,6 +41,6 @@ def notify_game_timeout(
             notified.append(parent.name)
 
     return {
-        "message": f"ゲーム時間終了通知を送信しました",
+        "message": "ゲーム時間終了通知を送信しました",
         "notified_parents": notified,
     }

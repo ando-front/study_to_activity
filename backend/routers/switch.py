@@ -136,7 +136,7 @@ async def list_switch_devices(
         raise HTTPException(
             status_code=400,
             detail="Nintendo のセッションが期限切れです。再度連携を行ってください。",
-        )
+        ) from None
     except Exception as e:
         logger.error(f"Failed to list devices: {e}")
         raise HTTPException(
@@ -199,7 +199,7 @@ async def sync_balance_to_switch(
         raise HTTPException(
             status_code=400,
             detail="Nintendo のセッションが期限切���です。再度連携を行っ���ください。",
-        )
+        ) from None
     except Exception as e:
         logger.error(f"Failed to sync to Switch: {e}")
         raise HTTPException(
