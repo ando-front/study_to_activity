@@ -2,8 +2,6 @@
 
 from datetime import date, datetime, timezone
 
-UTC = timezone.utc
-
 from sqlalchemy.orm import Session
 
 from backend.models import (
@@ -14,6 +12,8 @@ from backend.models import (
     TaskStatus,
     TriggerType,
 )
+
+UTC = timezone.utc
 
 
 def evaluate_and_grant(db: Session, child_id: int) -> list[dict]:

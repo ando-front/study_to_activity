@@ -1,7 +1,7 @@
-import pytest
 from datetime import date
 from unittest.mock import AsyncMock, patch
 
+import pytest
 from backend.sync_utils import trigger_switch_sync
 
 
@@ -14,8 +14,12 @@ async def test_sync_skips_gracefully_when_parent_has_no_nintendo_token(db_sessio
     修正前のバグ: `User.nintendo_session_token is not None` は常に True と評価され
     トークン未設定の親が返り、decrypt_token(None) で例外が発生していた。
     """
-    from backend.models import ActivityWallet, StudyPlan, StudyTask, TaskStatus, User, UserRole
-    from datetime import date as dt_date
+
+    from backend.models import (
+        ActivityWallet,
+        User,
+        UserRole,
+    )
 
     # 親ユーザーを作成 (Nintendo トークンなし)
     parent = User(name="Parent No Token", role=UserRole.PARENT)
