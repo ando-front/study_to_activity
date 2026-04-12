@@ -32,7 +32,9 @@ async def test_sync_skips_gracefully_when_parent_has_no_nintendo_token(db_sessio
     db_session.add(child)
     db_session.flush()
 
-    wallet = ActivityWallet(child_id=child.id, balance_minutes=30, daily_limit_minutes=120)
+    wallet = ActivityWallet(
+        child_id=child.id, balance_minutes=30, daily_limit_minutes=120
+    )
     db_session.add(wallet)
     db_session.commit()
 
@@ -63,7 +65,9 @@ async def test_sync_skips_when_no_parent_with_token_exists(db_session):
     db_session.add(child)
     db_session.flush()
 
-    wallet = ActivityWallet(child_id=child.id, balance_minutes=60, daily_limit_minutes=120)
+    wallet = ActivityWallet(
+        child_id=child.id, balance_minutes=60, daily_limit_minutes=120
+    )
     db_session.add(wallet)
     db_session.commit()
 

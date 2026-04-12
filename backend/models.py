@@ -58,7 +58,9 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False)
-    email = Column(String(255), nullable=True, unique=True, index=True)  # For Google OAuth
+    email = Column(
+        String(255), nullable=True, unique=True, index=True
+    )  # For Google OAuth
     role = Column(SAEnum(UserRole), nullable=False)
     pin = Column(String(255), nullable=True)  # Stores hashed PIN (bcrypt etc.)
     nintendo_session_token = Column(Text, nullable=True)  # Added for Switch integration
@@ -80,6 +82,7 @@ class User(Base):
             return decrypt_token(self.nintendo_session_token)
         except Exception:
             import logging
+
             logging.getLogger(__name__).warning(
                 "Failed to decrypt Nintendo token for user %s — token may be stale after key rotation",
                 self.id,

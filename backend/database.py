@@ -49,10 +49,22 @@ def ensure_schema_compatibility():
 
     try:
         with engine.begin() as connection:
-            connection.execute(text("ALTER TABLE users ALTER COLUMN pin TYPE VARCHAR(255)"))
-            connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS email VARCHAR(255)"))
-            connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS nintendo_session_token TEXT"))
-            connection.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_email ON users (email)"))
+            connection.execute(
+                text("ALTER TABLE users ALTER COLUMN pin TYPE VARCHAR(255)")
+            )
+            connection.execute(
+                text("ALTER TABLE users ADD COLUMN IF NOT EXISTS email VARCHAR(255)")
+            )
+            connection.execute(
+                text(
+                    "ALTER TABLE users ADD COLUMN IF NOT EXISTS nintendo_session_token TEXT"
+                )
+            )
+            connection.execute(
+                text(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS ix_users_email ON users (email)"
+                )
+            )
     except SQLAlchemyError as exc:
         # Column type is already compatible, or a non-fatal DB error occurred.
         # Log and continue rather than crashing the application on startup.
