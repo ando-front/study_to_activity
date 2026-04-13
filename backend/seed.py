@@ -14,7 +14,12 @@ def seed():
             print("Database already contains users. Skipping seed.")
             return
 
-        parent = User(name="お父さん", role=UserRole.PARENT, pin=hash_pin("1234"), email="angie07.inet@gmail.com")
+        parent = User(
+            name="お父さん",
+            role=UserRole.PARENT,
+            pin=hash_pin("1234"),
+            email="angie07.inet@gmail.com",
+        )
         db.add(parent)
         db.flush()
 
@@ -43,6 +48,7 @@ def seed():
 
     finally:
         db.close()
+
 
 if __name__ == "__main__":
     seed()

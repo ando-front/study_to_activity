@@ -34,7 +34,9 @@ def send_line_notify(token: str, message: str) -> bool:
             logger.info("LINE Notify sent successfully")
             return True
         else:
-            logger.warning("LINE Notify failed: %s %s", response.status_code, response.text)
+            logger.warning(
+                "LINE Notify failed: %s %s", response.status_code, response.text
+            )
             return False
     except Exception as exc:
         logger.error("LINE Notify error: %s", exc)

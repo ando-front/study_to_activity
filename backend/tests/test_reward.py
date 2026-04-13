@@ -87,7 +87,9 @@ def test_rejected_task_can_be_restarted(client):
             "child_id": child_id,
             "plan_date": str(date.today()),
             "title": "Redo Plan",
-            "tasks": [{"subject": "Math", "estimated_minutes": 30, "is_homework": False}],
+            "tasks": [
+                {"subject": "Math", "estimated_minutes": 30, "is_homework": False}
+            ],
         },
     )
     assert plan_resp.status_code == 200

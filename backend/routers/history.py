@@ -23,9 +23,7 @@ def get_study_history(  # noqa: C901
 ):
     """Get study history for a child."""
     child = (
-        db.query(User)
-        .filter(User.id == child_id, User.role == UserRole.CHILD)
-        .first()
+        db.query(User).filter(User.id == child_id, User.role == UserRole.CHILD).first()
     )
     if not child:
         raise HTTPException(status_code=404, detail="子供ユーザーが見つかりません")
@@ -34,11 +32,7 @@ def get_study_history(  # noqa: C901
         db.query(StudyTask, StudyPlan)
         .join(StudyPlan, StudyTask.plan_id == StudyPlan.id)
         .filter(StudyPlan.child_id == child_id)
-        .filter(
-            StudyTask.status.in_(
-                [TaskStatus.COMPLETED, TaskStatus.APPROVED]
-            )
-        )
+        .filter(StudyTask.status.in_([TaskStatus.COMPLETED, TaskStatus.APPROVED]))
     )
 
     if date_from:

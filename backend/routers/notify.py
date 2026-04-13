@@ -19,9 +19,7 @@ def notify_game_timeout(
 ):
     """Send LINE notification to parent(s) when child's game time expires."""
     child = (
-        db.query(User)
-        .filter(User.id == child_id, User.role == UserRole.CHILD)
-        .first()
+        db.query(User).filter(User.id == child_id, User.role == UserRole.CHILD).first()
     )
     if not child:
         raise HTTPException(status_code=404, detail="子供ユーザーが見つかりません")

@@ -93,14 +93,18 @@ class SwitchService:
             "state": state,
         }
 
-    async def complete_login(self, response_url: str, verifier: str | None = None, state: str | None = None):
+    async def complete_login(
+        self, response_url: str, verifier: str | None = None, state: str | None = None
+    ):
         """Complete the login using the full redirect URL."""
         verifier_to_use = verifier
         if state and state in self._pending and not verifier_to_use:
             verifier_to_use = self._pending[state]["verifier"]
 
         if not verifier_to_use:
-            raise RuntimeError("認証セッションが見つかりません。認証開始からやり直してください。")
+            raise RuntimeError(
+                "認証セッションが見つかりません。認証開始からやり直してください。"
+            )
 
         async with aiohttp.ClientSession() as session:
             auth = Authenticator(client_session=session)
@@ -127,7 +131,9 @@ class SwitchService:
             verifier_to_use = self._pending[state]["verifier"]
 
         if not verifier_to_use:
-            raise RuntimeError("認証セッションが見つかりません。認証開始からやり直してください。")
+            raise RuntimeError(
+                "認証セッションが見つかりません。認証開始からやり直してください。"
+            )
 
         async with aiohttp.ClientSession() as session:
             auth = Authenticator(client_session=session)
@@ -183,7 +189,9 @@ class SwitchService:
                     {
                         "device_id": device.device_id,
                         "name": device.name,
-                        "current_limit": device.limit_time if device.limit_time not in (-1, None) else 0,
+                        "current_limit": device.limit_time
+                        if device.limit_time not in (-1, None)
+                        else 0,
                     }
                 )
         return devices

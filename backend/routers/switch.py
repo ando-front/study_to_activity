@@ -21,7 +21,9 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-@router.get("/auth-url", response_model=SwitchAuthUrl, dependencies=[Depends(require_api_key)])
+@router.get(
+    "/auth-url", response_model=SwitchAuthUrl, dependencies=[Depends(require_api_key)]
+)
 async def get_switch_auth_url():
     """Get the URL to start Nintendo Account authentication."""
     return await switch_service.get_auth_url()
@@ -52,7 +54,8 @@ async def connect_switch(
     except Exception as e:
         logger.error(f"Failed to connect Switch: {e}")
         raise HTTPException(
-            status_code=400, detail="Nintendo Account の認証に失敗しました。URLが正しいか、有効期限が切れていないか確認してください。"
+            status_code=400,
+            detail="Nintendo Account の認証に失敗しました。URLが正しいか、有効期限が切れていないか確認してください。",
         ) from e
 
 
@@ -85,7 +88,8 @@ async def switch_callback(
     except Exception as e:
         logger.error(f"Failed to connect Switch via callback: {e}")
         raise HTTPException(
-            status_code=400, detail="Nintendo Account の認証に失敗しました。コードが正しいか、有効期限が切れていないか確認してください。"
+            status_code=400,
+            detail="Nintendo Account の認証に失敗しました。コードが正しいか、有効期限が切れていないか確認してください。",
         ) from e
 
 
@@ -109,10 +113,12 @@ async def get_auth_status(
     return {"status": result["status"]}
 
 
-@router.get("/devices/{user_id}", response_model=list[SwitchDeviceOut], dependencies=[Depends(require_api_key)])
-async def list_switch_devices(
-    user_id: int, db: Annotated[Session, Depends(get_db)]
-):
+@router.get(
+    "/devices/{user_id}",
+    response_model=list[SwitchDeviceOut],
+    dependencies=[Depends(require_api_key)],
+)
+async def list_switch_devices(user_id: int, db: Annotated[Session, Depends(get_db)]):
     """List devices associated with the linked Nintendo account."""
     user = db.query(User).filter(User.id == user_id).first()
     if not user or not user.nintendo_session_token:
@@ -144,10 +150,12 @@ async def list_switch_devices(
         ) from e
 
 
-@router.post("/sync/{user_id}", response_model=SwitchSyncResponse, dependencies=[Depends(require_api_key)])
-async def sync_balance_to_switch(
-    user_id: int, db: Annotated[Session, Depends(get_db)]
-):
+@router.post(
+    "/sync/{user_id}",
+    response_model=SwitchSyncResponse,
+    dependencies=[Depends(require_api_key)],
+)
+async def sync_balance_to_switch(user_id: int, db: Annotated[Session, Depends(get_db)]):
     """Sync the child's wallet balance to all linked Switch devices."""
     from backend.sync_utils import _calculate_switch_limit
 

@@ -58,13 +58,17 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False)
-    email = Column(String(255), nullable=True, unique=True, index=True)  # For Google OAuth
+    email = Column(
+        String(255), nullable=True, unique=True, index=True
+    )  # For Google OAuth
     role = Column(SAEnum(UserRole), nullable=False)
     pin = Column(String(255), nullable=True)  # Stores hashed PIN (bcrypt etc.)
     nintendo_session_token = Column(Text, nullable=True)  # Added for Switch integration
     parent_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # Child → Parent
     age = Column(Integer, nullable=True)  # Child's age
-    daily_game_limit_minutes = Column(Integer, nullable=True, default=60)  # Per-child game limit
+    daily_game_limit_minutes = Column(
+        Integer, nullable=True, default=60
+    )  # Per-child game limit
     line_notify_token = Column(String(255), nullable=True)  # Parent's LINE Notify token
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -72,7 +76,9 @@ class User(Base):
     study_plans = relationship("StudyPlan", back_populates="child")
     wallet = relationship("ActivityWallet", back_populates="child", uselist=False)
     activity_logs = relationship("ActivityLog", back_populates="child")
-    children = relationship("User", backref="parent", remote_side=[id], foreign_keys=[parent_id])
+    children = relationship(
+        "User", backref="parent", remote_side=[id], foreign_keys=[parent_id]
+    )
 
     @property
     def is_nintendo_linked(self) -> bool:
@@ -85,6 +91,7 @@ class User(Base):
             return decrypt_token(self.nintendo_session_token)
         except Exception:
             import logging
+
             logging.getLogger(__name__).warning(
                 "Failed to decrypt Nintendo token for user %s — token may be stale after key rotation",
                 self.id,

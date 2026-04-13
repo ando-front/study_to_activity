@@ -103,8 +103,16 @@ def test_sync_endpoint_error_when_no_devices_updated(client):
     mock_devices = [{"device_id": "dev1", "name": "Switch1"}]
 
     with (
-        patch("backend.routers.switch.switch_service.get_devices", new_callable=AsyncMock, return_value=mock_devices),
-        patch("backend.routers.switch.switch_service.update_device_limit", new_callable=AsyncMock, return_value=False),
+        patch(
+            "backend.routers.switch.switch_service.get_devices",
+            new_callable=AsyncMock,
+            return_value=mock_devices,
+        ),
+        patch(
+            "backend.routers.switch.switch_service.update_device_limit",
+            new_callable=AsyncMock,
+            return_value=False,
+        ),
         patch("backend.security.decrypt_token", return_value="dummy_session_token"),
     ):
         resp = client.post(
@@ -140,8 +148,16 @@ def test_sync_endpoint_success_when_device_updated(client):
     mock_devices = [{"device_id": "dev1", "name": "MySwitch"}]
 
     with (
-        patch("backend.routers.switch.switch_service.get_devices", new_callable=AsyncMock, return_value=mock_devices),
-        patch("backend.routers.switch.switch_service.update_device_limit", new_callable=AsyncMock, return_value=True),
+        patch(
+            "backend.routers.switch.switch_service.get_devices",
+            new_callable=AsyncMock,
+            return_value=mock_devices,
+        ),
+        patch(
+            "backend.routers.switch.switch_service.update_device_limit",
+            new_callable=AsyncMock,
+            return_value=True,
+        ),
         patch("backend.security.decrypt_token", return_value="dummy_session_token"),
     ):
         resp = client.post(

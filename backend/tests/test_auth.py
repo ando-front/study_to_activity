@@ -1,5 +1,3 @@
-
-
 def test_register_parent(client):
     """親ユーザーの登録テスト"""
     response = client.post(
@@ -75,7 +73,8 @@ def test_login_empty_pin_rejected_when_pin_set(client):
 def test_login_null_pin_rejected_when_pin_set(client):
     """PINが設定されているユーザーに対してPINなしでログインが失敗することのテスト"""
     reg = client.post(
-        "/api/auth/register", json={"name": "PIN User2", "role": "parent", "pin": "4321"}
+        "/api/auth/register",
+        json={"name": "PIN User2", "role": "parent", "pin": "4321"},
     )
     user_id = reg.json()["id"]
 
@@ -102,11 +101,21 @@ def test_register_duplicate_email_returns_409(client):
     """同じメールアドレスで登録すると409が返ることのテスト"""
     client.post(
         "/api/auth/register",
-        json={"name": "User X", "role": "parent", "pin": "1111", "email": "test@example.com"},
+        json={
+            "name": "User X",
+            "role": "parent",
+            "pin": "1111",
+            "email": "test@example.com",
+        },
     )
     response = client.post(
         "/api/auth/register",
-        json={"name": "User Y", "role": "parent", "pin": "2222", "email": "test@example.com"},
+        json={
+            "name": "User Y",
+            "role": "parent",
+            "pin": "2222",
+            "email": "test@example.com",
+        },
     )
     assert response.status_code == 409
     assert "メールアドレス" in response.json()["detail"]

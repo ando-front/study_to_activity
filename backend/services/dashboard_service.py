@@ -1,6 +1,7 @@
 """
 Service layer for dashboard-related logic.
 """
+
 from datetime import date
 
 from sqlalchemy.orm import Session
@@ -151,9 +152,7 @@ def get_parent_dashboard_data(db: Session):
 
     active_rules = db.query(RewardRule).filter(RewardRule.is_active).all()
 
-    game_time_summaries = [
-        get_child_game_time_summary(db, child) for child in children
-    ]
+    game_time_summaries = [get_child_game_time_summary(db, child) for child in children]
 
     return {
         "children": children,

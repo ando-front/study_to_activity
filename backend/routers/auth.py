@@ -132,9 +132,7 @@ def update_child(
 ):
     """Update a child user's profile."""
     child = (
-        db.query(User)
-        .filter(User.id == child_id, User.role == UserRole.CHILD)
-        .first()
+        db.query(User).filter(User.id == child_id, User.role == UserRole.CHILD).first()
     )
     if not child:
         raise HTTPException(status_code=404, detail="子供ユーザーが見つかりません")
@@ -147,9 +145,7 @@ def update_child(
         child.daily_game_limit_minutes = data.daily_game_limit_minutes
         # Also update wallet daily limit
         wallet = (
-            db.query(ActivityWallet)
-            .filter(ActivityWallet.child_id == child_id)
-            .first()
+            db.query(ActivityWallet).filter(ActivityWallet.child_id == child_id).first()
         )
         if wallet:
             wallet.daily_limit_minutes = data.daily_game_limit_minutes
@@ -165,9 +161,7 @@ def update_child(
 def delete_child(child_id: int, db: Annotated[Session, Depends(get_db)]):
     """Delete a child user and associated data."""
     child = (
-        db.query(User)
-        .filter(User.id == child_id, User.role == UserRole.CHILD)
-        .first()
+        db.query(User).filter(User.id == child_id, User.role == UserRole.CHILD).first()
     )
     if not child:
         raise HTTPException(status_code=404, detail="子供ユーザーが見つかりません")
@@ -229,9 +223,7 @@ def update_line_notify_token(
 ):
     """Set LINE Notify token for a parent user."""
     user = (
-        db.query(User)
-        .filter(User.id == user_id, User.role == UserRole.PARENT)
-        .first()
+        db.query(User).filter(User.id == user_id, User.role == UserRole.PARENT).first()
     )
     if not user:
         raise HTTPException(status_code=404, detail="親ユーザーが見つかりません")
