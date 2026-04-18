@@ -137,12 +137,12 @@ async def list_switch_devices(user_id: int, db: Annotated[Session, Depends(get_d
         return devices
     except HTTPException:
         raise
-    except InvalidSessionTokenException:
+    except InvalidSessionTokenException as err:
         logger.warning(f"Invalid session token for user {user_id}")
         raise HTTPException(
             status_code=400,
             detail="Nintendo のセッションが期限切れです。再度連携を行ってください。",
-        ) from None
+        ) from err
     except Exception as e:
         logger.error(f"Failed to list devices: {e}")
         raise HTTPException(
@@ -202,12 +202,12 @@ async def sync_balance_to_switch(user_id: int, db: Annotated[Session, Depends(ge
         return {"message": f"{limit}分 を同期しました", "synced_devices": synced_names}
     except HTTPException:
         raise
-    except InvalidSessionTokenException:
+    except InvalidSessionTokenException as err:
         logger.warning(f"Invalid session token for user {user_id}")
         raise HTTPException(
             status_code=400,
             detail="Nintendo のセッションが期限切���です。再度連携を行っ���ください。",
-        ) from None
+        ) from err
     except Exception as e:
         logger.error(f"Failed to sync to Switch: {e}")
         raise HTTPException(

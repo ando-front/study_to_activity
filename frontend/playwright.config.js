@@ -37,6 +37,7 @@ module.exports = defineConfig({
       timeout: 120 * 1000,
       env: {
         PYTHONPATH: '..',
+        ENCRYPTION_KEY: process.env.ENCRYPTION_KEY || (process.env.CI ? 'cJ59tk-u6AFsbowsirppCnYyKRfontxK3UB7LvAYqAQ=' : undefined),
       }
     }
   ],
