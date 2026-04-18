@@ -1,6 +1,7 @@
 """
 Service layer for dashboard-related logic.
 """
+
 from datetime import date
 
 from sqlalchemy.orm import Session

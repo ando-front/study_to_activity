@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import secrets
 
@@ -32,29 +34,34 @@ def verify_pin(plain_pin: str | None, hashed_pin: str | None) -> bool:
         # Fallback for legacy plain-text PINs stored before bcrypt migration
         return plain_pin == hashed_pin
 
+
 # --- Token Encryption (Fernet) ---
 ENCRYPTION_KEY = os.getenv("ENCRYPTION_KEY")
 if not ENCRYPTION_KEY:
     raise RuntimeError(
         "ENCRYPTION_KEY 環境変数が設定されていません。"
         "以下のコマンドで生成してください:\n"
-        "  python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\""
+        '  python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"'
     )
 fernet = Fernet(ENCRYPTION_KEY.encode())
+
 
 def encrypt_token(token: str) -> str:
     if not token:
         return None
     return fernet.encrypt(token.encode()).decode()
 
+
 def decrypt_token(encrypted_token: str) -> str:
     if not encrypted_token:
         return None
     return fernet.decrypt(encrypted_token.encode()).decode()
 
+
 # --- API Key Authentication ---
 BACKEND_API_KEY = os.getenv("BACKEND_API_KEY")
 _api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
 
 def require_api_key(api_key: str = Security(_api_key_header)) -> str:
     if not BACKEND_API_KEY:

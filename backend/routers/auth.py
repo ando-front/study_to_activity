@@ -110,9 +110,7 @@ def update_child(
 ):
     """Edit a child user's name or PIN."""
     child = (
-        db.query(User)
-        .filter(User.id == child_id, User.role == UserRole.CHILD)
-        .first()
+        db.query(User).filter(User.id == child_id, User.role == UserRole.CHILD).first()
     )
     if not child:
         raise HTTPException(status_code=404, detail="子供ユーザーが見つかりません")
@@ -131,9 +129,7 @@ def update_child(
 def delete_child(child_id: int, db: Annotated[Session, Depends(get_db)]):
     """Delete a child user and their wallet."""
     child = (
-        db.query(User)
-        .filter(User.id == child_id, User.role == UserRole.CHILD)
-        .first()
+        db.query(User).filter(User.id == child_id, User.role == UserRole.CHILD).first()
     )
     if not child:
         raise HTTPException(status_code=404, detail="子供ユーザーが見つかりません")

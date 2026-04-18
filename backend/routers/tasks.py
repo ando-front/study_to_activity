@@ -1,7 +1,8 @@
 """Tasks router - manage study task lifecycle (start, complete, approve)."""
+
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
@@ -26,6 +27,8 @@ from backend.schemas import (
 )
 from backend.services import dashboard_service
 from backend.sync_utils import trigger_switch_sync
+
+UTC = timezone.utc
 
 router = APIRouter()
 

@@ -29,7 +29,8 @@ async def trigger_switch_sync(db: Session, child_id: int):
         parent = (
             db.query(User)
             .filter(
-                User.role == UserRole.PARENT, User.nintendo_session_token != None  # noqa: E711
+                User.role == UserRole.PARENT,
+                User.nintendo_session_token != None,  # noqa: E711
             )
             .first()
         )

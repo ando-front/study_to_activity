@@ -197,6 +197,7 @@ class WeeklySchedule(BaseModel):
     "月", "火", "水", "木", "金", "土", "日" (Mon–Sun).
     Each value is a (possibly empty) list of plans for that day.
     """
+
     week_start: date
     week_end: date
     days: dict[str, list[StudyPlanOut]]
@@ -207,7 +208,6 @@ class ParentDashboard(BaseModel):
     pending_approvals: list[StudyTaskOut]
     today_plans: list[StudyPlanOut]
     active_rules: list[RewardRuleOut]
-
 
 
 # --- Reward Log ---
@@ -242,6 +242,7 @@ class SwitchConnectRequest(BaseModel):
 
 class SwitchCallbackRequest(BaseModel):
     """Accept session_token_code (or full redirect URL) instead of the full response URL."""
+
     user_id: int
     session_token_code: str  # raw code, full URL, or fragment all accepted
     verifier: Optional[str] = None
