@@ -206,10 +206,10 @@ async def sync_balance_to_switch(user_id: int, db: Annotated[Session, Depends(ge
         logger.warning(f"Invalid session token for user {user_id}")
         raise HTTPException(
             status_code=400,
-            detail="Nintendo のセッションが期限切���です。再度連携を行っ���ください。",
+            detail="Nintendo のセッションが期限切れです。再度連携を行ってください。",
         ) from err
     except Exception as e:
         logger.error(f"Failed to sync to Switch: {e}")
         raise HTTPException(
-            status_code=500, detail="Switch への同期に失敗���ました"
+            status_code=500, detail="Switch への同期に失敗しました"
         ) from e
