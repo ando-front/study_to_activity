@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import secrets
+from typing import Optional
 
 from cryptography.fernet import Fernet
 from fastapi import HTTPException, Security
@@ -12,13 +13,13 @@ from passlib.context import CryptContext
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-def hash_pin(pin: str | None) -> str | None:
+def hash_pin(pin: Optional[str]) -> Optional[str]:
     if not pin:
         return None
     return pwd_context.hash(pin)
 
 
-def verify_pin(plain_pin: str | None, hashed_pin: str | None) -> bool:
+def verify_pin(plain_pin: Optional[str], hashed_pin: Optional[str]) -> bool:
     """Verify a PIN against its stored hash.
 
     Returns True if the PIN matches, False otherwise.

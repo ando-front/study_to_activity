@@ -18,6 +18,7 @@ from backend.models import (
 from backend.reward_engine import evaluate_and_grant
 from backend.schemas import (
     ChildDashboard,
+    ChildGameTimeSummary,
     ParentDashboard,
     RewardRuleOut,
     StudyPlanOut,
@@ -79,6 +80,7 @@ def start_task(task_id: int, db: Annotated[Session, Depends(get_db)]):
 @router.post("/{task_id}/complete", response_model=StudyTaskOut)
 def complete_task(
     task_id: int,
+    background_tasks: BackgroundTasks,
     db: Annotated[Session, Depends(get_db)],
     actual_minutes: int | None = None,
 ):
@@ -107,7 +109,38 @@ def complete_task(
 
     db.commit()
     db.refresh(task)
+
+    # Send LINE Notify to parent(s)
+    child = task.plan.child
+    _send_approval_notification(background_tasks, db, child, task)
+
     return task
+
+
+def _send_approval_notification(
+    background_tasks: BackgroundTasks,
+    db: Session,
+    child: User,
+    task: StudyTask,
+):
+    """Send LINE notification to parent(s) when child submits task for approval."""
+    from backend.services.line_notify import notify_approval_request
+
+    # Find parent(s) - either linked parent or all parents
+    if child.parent_id:
+        parents = db.query(User).filter(User.id == child.parent_id).all()
+    else:
+        parents = db.query(User).filter(User.role == UserRole.PARENT).all()
+
+    for parent in parents:
+        if parent.line_notify_token:
+            background_tasks.add_task(
+                notify_approval_request,
+                parent.line_notify_token,
+                child.name,
+                task.subject,
+                task.actual_minutes or task.estimated_minutes,
+            )
 
 
 @router.post("/{task_id}/approve", response_model=dict)
@@ -209,4 +242,14 @@ def parent_dashboard(db: Annotated[Session, Depends(get_db)]):
         ],
         today_plans=[StudyPlanOut.model_validate(p) for p in data["today_plans"]],
         active_rules=[RewardRuleOut.model_validate(r) for r in data["active_rules"]],
+        game_time_summaries=[
+            ChildGameTimeSummary(
+                child=UserOut.model_validate(s["child"]),
+                daily_game_limit=s["daily_game_limit"],
+                today_earned=s["today_earned"],
+                today_consumed=s["today_consumed"],
+                wallet_balance=s["wallet_balance"],
+            )
+            for s in data["game_time_summaries"]
+        ],
     )

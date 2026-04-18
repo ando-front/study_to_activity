@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from backend import database
 from backend.database import Base, engine
-from backend.routers import auth, plans, rules, switch, tasks, wallet
+from backend.routers import auth, history, notify, plans, rules, switch, tasks, wallet
 from backend.seed import seed as _auto_seed
 
 # Create all tables
@@ -66,6 +66,8 @@ app.include_router(tasks.router, prefix="/api/tasks", tags=["タスク"])
 app.include_router(rules.router, prefix="/api/rules", tags=["報酬ルール"])
 app.include_router(wallet.router, prefix="/api/wallet", tags=["ウォレット"])
 app.include_router(switch.router, prefix="/api/switch", tags=["Nintendo Switch"])
+app.include_router(history.router, prefix="/api/history", tags=["学習履歴"])
+app.include_router(notify.router, prefix="/api/notify", tags=["通知"])
 
 
 @app.get("/")

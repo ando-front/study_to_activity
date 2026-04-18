@@ -13,6 +13,9 @@ class UserCreate(BaseModel):
     role: str  # "parent" or "child"
     pin: Optional[str] = None
     email: Optional[str] = None  # For Google OAuth
+    parent_id: Optional[int] = None  # For linking child to parent
+    age: Optional[int] = None
+    daily_game_limit_minutes: Optional[int] = 60
 
 
 class UserOut(BaseModel):
@@ -21,6 +24,9 @@ class UserOut(BaseModel):
     email: Optional[str] = None
     role: str
     is_nintendo_linked: bool = False
+    parent_id: Optional[int] = None
+    age: Optional[int] = None
+    daily_game_limit_minutes: Optional[int] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -34,6 +40,13 @@ class UserUpdate(BaseModel):
 
 class ChildCreate(BaseModel):
     name: str
+    pin: Optional[str] = None
+
+
+class ChildUpdate(BaseModel):
+    name: Optional[str] = None
+    age: Optional[int] = None
+    daily_game_limit_minutes: Optional[int] = None
     pin: Optional[str] = None
 
 
@@ -203,11 +216,45 @@ class WeeklySchedule(BaseModel):
     days: dict[str, list[StudyPlanOut]]
 
 
+class ChildGameTimeSummary(BaseModel):
+    child: UserOut
+    daily_game_limit: int
+    today_earned: int
+    today_consumed: int
+    wallet_balance: int
+
+
 class ParentDashboard(BaseModel):
     children: list[UserOut]
     pending_approvals: list[StudyTaskOut]
     today_plans: list[StudyPlanOut]
     active_rules: list[RewardRuleOut]
+    game_time_summaries: list[ChildGameTimeSummary] = []
+
+
+class StudyHistoryEntry(BaseModel):
+    task_id: int
+    subject: str
+    description: Optional[str] = None
+    estimated_minutes: int
+    actual_minutes: Optional[int] = None
+    is_homework: bool
+    status: str
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    approved_at: Optional[datetime] = None
+    plan_date: date
+    plan_title: str
+    reward_minutes: int = 0
+
+    model_config = {"from_attributes": True}
+
+
+class StudyHistoryResponse(BaseModel):
+    child: UserOut
+    entries: list[StudyHistoryEntry]
+    total_study_minutes: int
+    total_reward_minutes: int
 
 
 # --- Reward Log ---
